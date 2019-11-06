@@ -1,0 +1,17 @@
+#!/usr/bin/env gnuplot
+unset tics
+set nokey
+set term png size 1280,1280
+set pointsize 0.1
+unset colorbox
+
+dirs = system('ls ../../output_1DSPPdynamics/')
+i=1
+
+do for [dir in dirs] {
+    file = "../../output_1DSPPdynamics/".dir."/system.dat"
+    set output "../../output_1DSPPdynamics/".dir."/system.png"
+    #set cbrange [-1:1]
+    plot file matrix with image
+    i = i + 1
+}

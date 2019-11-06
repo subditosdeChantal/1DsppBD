@@ -1,0 +1,17 @@
+reset
+
+dirs = system('ls ../../output_1DSPPdynamics/')
+
+do for [dir in dirs] {
+  file = "../../output_1DSPPdynamics/".dir."/sizedistr.dat"
+  set output "../../output_1DSPPdynamics/".dir."/sizedistr.png"
+  #set title "A = ".word(AA,i)." {/Symbol a} = ".word(A,j)." {/Symbol f} = ".word(F,k) font "Helvetica,20"
+  unset title
+  set xlabel "Size" font "Helvetica,20"
+  set ylabel "P(l)" font "Helvetica,20"
+  set logscale y 10
+  set format y "10^{%L}"
+  set tics font "Helvetica,20"
+  unset key
+  plot file with points lc rgb 'blue' pt 9
+}

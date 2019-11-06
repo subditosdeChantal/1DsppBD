@@ -1,0 +1,16 @@
+/* FILL EACH LINE WITH THE DESIRED VALUE FOR THE INDICATED VARIABLE. FORMAT IS ALSO SPECIFIED */ 
+
+/*1*/	/* Debug variable: 0 = no info printed - 1 = some info printed - 2 = all info printed */	/*INT*/
+/*2*/	/* Lattice size */										/*INT*/
+/*3*/	/* Tumbling rate */										/*FLOAT*/
+/*4*/	/* Density */											/*FLOAT*/
+/*5*/	/* Total simulation time */									/*INT*/
+/*6*/	/* Measuring interval */									/*INT*/
+/*7*/	/* Range of the LJ potential */									/*FLOAT*/
+/*8*/	/* LJ potential intensity parameter */								/*FLOAT*/
+/*9*/	/* LJ potential particle diameters parameter */							/*INT*/
+/*10*/	/* Propulsion force */										/*FLOAT*/
+/*11*/	/* Beta - Inverse of the temperature energy */							/*FLOAT*/
+/*12*/	/* Translational diffusivity */									/*FLOAT*/
+/*13*/	/* Cluster mobility selector: 1 = motile clusters - 0 = still clusters */			/*INT*/
+/*14*/	/* Cutoff distance for considering particles belong to same cluster */				/*FLOAT*/
