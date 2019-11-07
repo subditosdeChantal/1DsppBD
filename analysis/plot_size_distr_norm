@@ -4,8 +4,8 @@ set term png #size 1280,1280
 dirs = system('ls ../../output_1DSPPdynamics/')
 
 do for [dir in dirs] {
-  file = "../../output_1DSPPdynamics/".dir."/sizedistr.dat"
-  set output "../../output_1DSPPdynamics/".dir."/sizedistr.png"
+  file = "../../output_1DSPPdynamics/".dir."/sizedistr_norm.dat"
+  set output "../../output_1DSPPdynamics/".dir."/sizedistr_norm.png"
   alpha=dir[6:10]
   phi=dir[13:17]
   T=dir[20:29]

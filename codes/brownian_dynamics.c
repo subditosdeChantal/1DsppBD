@@ -70,9 +70,9 @@ void main(int argc, char **argv){
   float LBclusters[N/2];			/* Vector with the left boundaries of the clusters */
   float RBclusters[N/2];			/* Vector with the right boundaries of the clusters */
   int Nsize[N];					/* Vector with the number of clusters of each size */
-  int Ndir[3];					/* Vector with the number of clusters in each direction : +, -, 0 */
-  int Ndir_swim[2];				/* Vector with the number of particles swimming in each direction : +, - */
-  int Ndir_res[3];				/* Vector with the number of particles moving in each direction : +, -, 0 */
+  int Ndir[3]={0,0,0};				/* Vector with the number of clusters in each direction : +, -, 0 */
+  int Ndir_swim[2]={0,0};			/* Vector with the number of particles swimming in each direction : +, - */
+  int Ndir_res[3]={0,0,0};			/* Vector with the number of particles moving in each direction : +, -, 0 */
   float C[L/2];					/* Correlations */
   clock_t tt;					/* Real time */
   clock_t t_0=clock();				/* Real starting time */
@@ -86,7 +86,7 @@ void main(int argc, char **argv){
     //int status = system("mv ");
   }
   char newdir[192];									/* Directory for the new simulation */
-  sprintf(newdir, "%s/sim_a%.3f_f%.3f_t%d_L%d_D%.2f_Fp%.2f_CMOB%d", output_dir, alpha, fi, Tmax, L, Dt, Fp, CMOB);	
+  sprintf(newdir, "%s/sim_a%.3f_f%.3f_t%.10d_L%.5d_D%.2f_Fp%.2f_CMOB%d", output_dir, alpha, fi, Tmax, L, Dt, Fp, CMOB);	
   struct stat st_bis = {0};
   if (stat(newdir, &st_bis) == -1) {
     mkdir(newdir, 0777);
@@ -99,7 +99,7 @@ void main(int argc, char **argv){
   sprintf(bufferscn, "%s/sizedistr_norm.dat", newdir);
   FILE *dc;										/* Saves the number of clusters for each direction overall */
   char bufferdc[192];
-  sprintf(bufferdc, "%s/dirdistr", newdir);
+  sprintf(bufferdc, "%s/dirdistr.dat", newdir);
   FILE *pdc;										/* Saves the number of particles swimming in each direction overall */
   char bufferpdc[192];
   sprintf(bufferpdc, "%s/swim_dirdistr.dat", newdir);
@@ -153,6 +153,7 @@ void main(int argc, char **argv){
     directions[i]=r2;
     trueDirections[i]=r3;
     clusters[i]=0;
+    Nsize[i]=0;
   }
   if (DEBUG>0) {
     printf("\nIntial state of the system:\n");
@@ -165,7 +166,7 @@ void main(int argc, char **argv){
   /* TIME LOOP - DYNAMICS*/
   for (step=0; step<Tmax; step++) {
 
-    for (i=0; i<N; i++) {clusters[i]=0;}		/* Reset the particel-to-cluster tagger */
+    for (i=0; i<N; i++) {clusters[i]=0;}		/* Reset the particle-to-cluster tagger */
 
     /* INDIVIDUAL DYNAMICS */
 
@@ -311,7 +312,7 @@ void main(int argc, char **argv){
       int p;
       for (i=1; i<c; i++) {
         dir=0, size=0;						/* Reset direction and size for new cluster */
-        if (DEBUG==2) {printf("\nCluster: %d -- Zeroth boundaries: %.3f-%.3f",i+1,clLB,clRB);}
+        if (DEBUG==2) {printf("\nCluster: %d -- Zeroth boundaries: %.3f-%.3f",i,clLB,clRB);}
         for (p=0; p<N; p++) {					/* Compute the direction, size and boundaries of the cluster */
           if (clusters[p]==i) {
             float posit=positions[p];				/* Position */
@@ -398,27 +399,41 @@ void main(int argc, char **argv){
     }								/* End of cluster dynamics */
 
     /* SPATIAL CORRELATIONS */  
-    int tag, dist, rest_i, rest_j;
-    float norm=N*(N-1)/(float)2;
+    int tag1, tag2, idist;
+    float dist;
     if ((step+1)%Tint==0 && step>0) {				/* Only at selected time steps */
-      for (dist=0; dist<L/2; dist++) {C[dist]=0;}		/* Reset correlations */
-      for (tag=0; tag<N-1; tag++) {				/* Sum over particles */
-        for (dist=tag+1; dist<N; dist++) {			/* Sum over all other particles */
-          float distance=abs(positions[tag]-positions[dist]);
-          C[(int)distance]+=1/norm;
+      if (DEBUG==2) {
+        printf("\n\n\nState of the system:\n");
+        for (tag1=0; tag1<N; tag1++) {printf("%.3f ",positions[tag1]);}
+        printf("\n");
+        printf("\n\n\nCOMPUTING CORRELATIONS...\n\n");
+      }
+      for (tag1=0; tag1<L/2; tag1++) {C[tag1]=0;}		/* Reset correlations */
+      if (DEBUG==2) {printf("Correlations reset\n\n");}
+      for (tag1=0; tag1<N; tag1++) {				/* Sum over particles */
+        for (tag2=tag1; tag2<N; tag2++) {			/* Sum over all other particles */
+          dist=positions[tag1]-positions[tag2];
+          if (dist<0) {dist=-dist;}
+          if (dist>(L/2)) {dist=L-dist;}
+          idist=(int)ceil(dist);
+          C[idist]+=1/(float)N;
+          if (DEBUG==2) {
+            printf("Particles %d and %d\nDistance: %.3f\nInteger distance: %d\nC[%d]=%.3f\n\n",tag1+1,tag2+1,dist,idist,idist,C[idist]);
+          }
         }
       }
       fprintf(corr, "%d	", step+1);				/* Save correlations */
-      for (dist=0; dist<L/2; dist++) {fprintf(corr, "%.10f	", C[dist]);}
+      for (idist=0; idist<L/2; idist++) {fprintf(corr, "%.10f	", C[idist]);}
       fprintf(corr, "\n");
+      if (DEBUG==2) {printf("\n\nFINISHED COMPUTING CORRELATIONS\n\n\n");}
     }
 
     /* Save total number of clusters and system snapshot */
     if ((step)%(int)100==0) {
-      fprintf(nc, "%d	%d\n", step+1, c);			/* # of clusters */
+      fprintf(nc, "%d	%d\n", step+1, c-1);			/* # of clusters */
       int sn;
-      //fprintf(snap, "%d ", step+1);				/* snap */
-      for (sn=0; sn<L; sn++) {fprintf(snap, "%.10f ", positions[sn]);}
+      fprintf(snap, "%d ", step+1);				/* snap */
+      for (sn=0; sn<N; sn++) {fprintf(snap, "%.10f ", positions[sn]);}
       fprintf(snap, "\n");
     }
 
@@ -431,6 +446,10 @@ void main(int argc, char **argv){
       printf("\n");
       for (i=0; i<N; i++) {printf("%d ",clusters[i]);}
       printf("\n");
+      if ((step+1)%Tint==0 && step>0) {
+        for (i=0; i<N; i++) {printf("%d ",Nsize[i]);}
+        printf("\n");
+      }
       getchar();
     }
     else {

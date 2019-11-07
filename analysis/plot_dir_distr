@@ -1,0 +1,30 @@
+reset
+#set term png #size 1280,1280
+
+dirs = system('ls ../../output_1DSPPdynamics/')
+
+do for [dir in dirs] {
+  file1 = "../../output_1DSPPdynamics/".dir."/dirdistr.dat"
+  file2 = "../../output_1DSPPdynamics/".dir."/swim_dirdistr.dat"
+  file3 = "../../output_1DSPPdynamics/".dir."/result_dirdistr.dat"
+  #set output "../../output_1DSPPdynamics/".dir."/directions.png"
+  alpha=dir[6:10]
+  phi=dir[13:17]
+  T=dir[20:29]
+  L=dir[32:36]
+  set title "{/Symbol a} = ".alpha." {/Symbol f} = ".phi
+  set xlabel "Direction" font "Helvetica,20"
+  set ylabel "P(d)" font "Helvetica,20"
+  #set logscale y 10
+  #set format y "10^{%L}"
+  set tics font "Helvetica,20"
+  #unset key
+  plot file1 with lines lt 1 lc rgb "red" lw 3 title "Clusters"
+  replot file2 with lines lt 1 lc rgb "blue" lw 3 title "Swim"
+  replot file3 with lines lt 1 lc rgb "black" lw 3 title "Result"
+
+  set term png 
+  set output "../../output_1DSPPdynamics/".dir."/directions.png"
+  replot
+  set term x11
+}
