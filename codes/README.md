@@ -1,7 +1,8 @@
 Esta carpeta contiene los códigos de simulación. Hay 3 ficheros además del ejecutable.
 
 Fichero 1: brownian_dynamics.c
-	Código en C# para la dinámica del sistema. No se cambia de una simulación a otra, lee los parámetros de input.dat. 
+	Código en C# para la dinámica del sistema. No se cambia de una simulación a otra, lee los parámetros de input.dat.
+	Con cada nueva simulación se crea una nueva carpeta (salvo que ya exista una carpeta para los mismos parámetros) en ~/output_1DSPPdynamics/ que a su vez se crea con la primera simulación.
 
 Fichero 2: input.dat
 	Contiene todos los parámetros necesarios para correr una simulación. Aquí es donde se modifica antes de lanzar una simulación, no en brownian_dynamics.c.
