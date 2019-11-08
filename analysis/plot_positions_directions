@@ -1,11 +1,13 @@
 reset
 set term png size 1280,1280
+set palette rgb 33,13,10
+unset colorbox
 
 dirs = system('ls ../../output_1DSPPdynamics/')
 
 do for [dir in dirs] {
-  file = "../../output_1DSPPdynamics/".dir."/system.dat"
-  set output "../../output_1DSPPdynamics/".dir."/positions.png"
+  file = "../../output_1DSPPdynamics/".dir."/system_bis.dat"
+  set output "../../output_1DSPPdynamics/".dir."/positions_directions.png"
   alpha=dir[6:10]
   phi=dir[13:17]
   T=dir[20:29]
@@ -17,5 +19,5 @@ do for [dir in dirs] {
   set ylabel "Time" font "Helvetica,20"
   set tics font "Helvetica,20"
   unset key
-  plot for [i=1:N] file using i+1:1 with points lc rgb 'blue' pt 7 ps 0.001
+  plot for [i=1:N] file using 2*i:1:2*i+1 with points lc palette pt 7 ps 0.001
 }

@@ -63,7 +63,7 @@ void main(int argc, char **argv){
   float positions[N];				/* Particles' positions */
   int directions[N];				/* Particles' swimming directions (1=+x; 0=-x;) */
   float trueDirections[N];			/* Particles' resulting velocities */
-  int i;					/* Counter */
+  int i, j;					/* Counter */
   float Vprime[N];				/* Gradient of the potential on each particle*/
   int step;					/* Time step counter */
   int clusters[N];				/* Particles' clusters */
@@ -114,6 +114,10 @@ void main(int argc, char **argv){
   char buffersnap[192];
   sprintf(buffersnap, "%s/system.dat", newdir);
   snap=fopen(buffersnap, "wb");
+  FILE *snapbis;										/* Saves snapshots of the system */
+  char buffersnapbis[192];
+  sprintf(buffersnapbis, "%s/system_bis.dat", newdir);
+  snapbis=fopen(buffersnapbis, "wb");
   FILE *corr;										/* Saves site-to-site occupancy correlations */
   char buffercorr[192];
   sprintf(buffercorr, "%s/corr.dat", newdir);
@@ -143,8 +147,21 @@ void main(int argc, char **argv){
   }
 
   /* INITIAL STATE OF THE SYSTEM - RANDOM */
+  if (DEBUG==3) {getchar(); printf("\n\n\nINITIALIZING THE SYSTEM\n");}
   for (i=0; i<N; i++) {						/* Particles are N, ordered from 1 to N */
+    //if (DEBUG==3) {getchar();}
     float r1=rand()/(float)RAND_MAX*L;				/* Random position (0 to L) */
+    if (DEBUG==3) {printf("Position %d: %.3f\n",i+1,r1);}
+    int busy=0;
+    for (j=0; j<i; j++) {
+      float ddist=r1-positions[j];
+      if (ddist<0) {ddist=-ddist;}
+      if (ddist>L/2) {ddist=L-ddist;}
+      if (DEBUG==3) {printf("  Position %d: %.3f - Distance: %.3f\n",j+1,positions[j],ddist);}
+      if (ddist<sigma) {busy=1; continue;}
+    }
+    if (DEBUG==3) {printf("Busy: %d\n",busy);}
+    if (busy==1) {i=i-1; continue;}
     positions[i]=r1;
     int r2=rand()%2;						/* Random direction (1=+x; 0=-x;) */
     int r3;
@@ -164,11 +181,13 @@ void main(int argc, char **argv){
   }
 
   /* TIME LOOP - DYNAMICS*/
+  if (DEBUG==3) {getchar(); printf("\n\n\nSTARTING TIME LOOP\n\n\n");}
   for (step=0; step<Tmax; step++) {
 
     for (i=0; i<N; i++) {clusters[i]=0;}		/* Reset the particle-to-cluster tagger */
 
     /* INDIVIDUAL DYNAMICS */
+    if (DEBUG==3) {getchar(); printf("\n\n\nINDIVIDUAL DYNAMICS - t=%d\n",step+1);}
 
     /* CHOOSE A RANDOM ORDER OF MOVEMENT */
     int orderofmovement[N];				/* Choice of an order for moving the particles */
@@ -181,7 +200,7 @@ void main(int argc, char **argv){
     int k;
     for (k=0; k<N; k++) {
       int ptm=orderofmovement[k]-1;			/* Particle to move now */
-      if (DEBUG==2) {printf("\nParticle: %d\n",ptm+1);}
+      if (DEBUG>=2) {printf("\nParticle: %d\n",ptm+1);}
 
       /* TUMBLE */
       int prob=rand();					/* Random number to compare to alpha */
@@ -203,25 +222,25 @@ void main(int argc, char **argv){
         if (dist>L/2) {dist=L-dist;}
         Vprime[ptm]+=posneg*LJprime(epsilon,sigma,Vrange,dist);
       }
-      if (DEBUG==2) {printf("F: %.10f\n",-Vprime[ptm]);}
+      if (DEBUG==3) {printf("F: %.10f\n",-Vprime[ptm]);}
 
       /* GAUSSIAN WHITE NOISE */
       float U1=rand()/(float)RAND_MAX;			/* Uniformly distributed RV */
-      if (DEBUG==2) {printf("U1: %.3f\n",U1);}
+      //if (DEBUG==3) {printf("U1: %.3f\n",U1);}
       float U2=rand()/(float)RAND_MAX;			/* Uniformly distributed RV */
-      if (DEBUG==2) {printf("U2: %.3f\n",U2);}
+      //if (DEBUG==3) {printf("U2: %.3f\n",U2);}
       float Z1=sqrt(-2*log(U1))*cos(2*M_PI*U2);		/* Normally distributed RV */
-      if (DEBUG==2) {printf("Z1: %.3f\n",Z1);}
+      //if (DEBUG==3) {printf("Z1: %.3f\n",Z1);}
       float Z2=sqrt(-2*log(U1))*sin(2*M_PI*U2);		/* Normally distributed RV */
-      if (DEBUG==2) {printf("Z2: %.3f\n",Z2);}
+      //if (DEBUG==3) {printf("Z2: %.3f\n",Z2);}
       float eta=Z1;
-      if (DEBUG==2) {printf("eta: %.3f\n",eta);}
+      if (DEBUG==3) {printf("eta: %.3f\n",eta);}
 
       /* NEW POSITION */
       float npos;					/* New position */
       int vel=directions[ptm];				/* Velocity of the particle: 1 site/time-step in the direction */
       npos=pos+beta*Dt*(Fp*vel-Vprime[ptm])+sqrt(2*Dt)*eta;
-      if (DEBUG==2) {
+      if (DEBUG>=2) {
         printf("Old position: %.3f\n",pos);
         printf("Velocity: %d\n",vel);
         printf("Expected new position: %.3f\n",npos);
@@ -229,20 +248,23 @@ void main(int argc, char **argv){
       
       /* RESULTING DIRECTION */
       trueDirections[ptm]=npos-pos;
-      if (DEBUG==2) {printf("True velocity: %.3f\n",trueDirections[ptm]);}
+      if (DEBUG>=2) {printf("True velocity: %.3f\n",trueDirections[ptm]);}
 
       /* FIND IF MOVEMENT IS ALLOWED */
-      if (npos<0) {npos=npos+L;}				/* PBCs */
+      if (npos<0) {npos=npos+L;}			/* PBCs */
       else if (npos>=L) {npos=npos-L;}
-      if (DEBUG==2) {printf("Expected new position (with PBCs): %.3f\n",npos);}
+      if (DEBUG>=2) {printf("Expected new position (with PBCs): %.3f\n",npos);}
       int allowed=1;
       for (v=0; v<N; v++) {
         if (v==ptm) {continue;}
-        float dist=abs(npos-positions[v]);
+        float dist=npos-positions[v];
+        if (dist<0) {dist=-dist;}			/* Absolute value */
+        if (dist>L/2) {dist=L-dist;}			/* PBCs */
         if (dist<sigma) {allowed=0;}
+        if (DEBUG==3) {printf("  Distance to particle %d: %.3f - allowed: %d\n",v+1,dist,allowed);}
       }
       if (allowed==1) {positions[ptm]=npos;}
-      if (DEBUG==2) {printf("Real new position: %.3f\n",positions[ptm]);}
+      if (DEBUG>=2) {printf("Real new position: %.3f\n",positions[ptm]);}
 
       /* Save the direction of the particle: swimming and resulting (if Tint) */
       if ((step+1)%Tint==0 && step>0) {
@@ -255,7 +277,7 @@ void main(int argc, char **argv){
 
     }
 
-    if (DEBUG==2) {
+    if (DEBUG>=2) {
       printf("\nState of the system after individual dynamics:\n");
       for (i=0; i<N; i++) {printf("%.3f ",positions[i]);}
       printf("\n");
@@ -266,18 +288,21 @@ void main(int argc, char **argv){
     /* COLLECTIVE DYNAMICS */
 
     /* EVALUATE CLUSTERS */
+    if (DEBUG==3) {getchar(); printf("\n\n\nEVALUATING CLUSTERS - t=%d\n\n\n",step+1);}
 
     int c=1;							/* Cluster counter */
-    int j=0;							/* Particle counter */
+    j=0;							/* Particle counter */
     int broken=0;						/* Tag for broken cluster @ the boundary */
     float limit_broken=0;					/* Limit of broken cluster @ the boundary */
     for (i=0; i<N-1; i++) {					/* First particle loop */
       for (j=i+1; j<N; j++) {					/* Second particle loop */
-        float dist=abs(positions[j]-positions[i]);		/* Distance */
+        float dist=positions[j]-positions[i];			/* Distance */
+        if (dist<0) {dist=-dist;}				/* Absolute value */
         if (dist>L/2) {
           dist=L-dist;						/* PBCs */
           if (dist<cluster_cutoff) {broken=c;}			/* Two particles at the boundaries so cluster is broken */
         }
+        if (DEBUG==3) {printf("\nParticles %d and %d - Distance: %.3f\n",i+1,j+1,dist);}
         if (dist<cluster_cutoff) {				/* Inside same cluster */
           if (clusters[i]==0) {
             if (clusters[j]==0) {				/* If none of the two particles have been assigned to a cluster... */
@@ -289,6 +314,7 @@ void main(int argc, char **argv){
           }
           else {clusters[j]=clusters[i];}			/* If particle i has a cluster assign cluster of i to j */
         }
+        if (DEBUG==3) {printf("  Cluster of particle %d: %d\n  Cluster of particle %d: %d\n",i+1,clusters[i],j+1,clusters[j]);}
       } 
     }
     for (i=0; i<N; i++) {					/* Measure mass and limit of the broken cluster @ the boundary */
@@ -296,15 +322,16 @@ void main(int argc, char **argv){
         if (positions[i]<(limit_broken+cluster_cutoff)) {limit_broken=positions[i];}
       }
     }
-    if (DEBUG==2) {
+    if (DEBUG>=2) {
       for (i=0; i<N; i++) {printf("%d ",clusters[i]);}
       printf("\n");
-      printf("Number of clusters: %d\n",c);
+      printf("Number of clusters: %d\n",c-1);
     }
 
     if (CMOB==1) {						/* If moving clusters are chosen do collective dynamics */
 
       /* CHANGE POSITION OF CLUSTERS */
+      if (DEBUG==3) {getchar(); printf("\n\n\nCOLLECTIVE DYNAMICS - t=%d\n\n\n",step+1);}
       int dir, size;						/* Cluster direction and size variables */
       float clusterprob;					/* Cluster jumping probability variable */
       float clRB, clLB;						/* Cluster boundaries */
@@ -312,7 +339,7 @@ void main(int argc, char **argv){
       int p;
       for (i=1; i<c; i++) {
         dir=0, size=0;						/* Reset direction and size for new cluster */
-        if (DEBUG==2) {printf("\nCluster: %d -- Zeroth boundaries: %.3f-%.3f",i,clLB,clRB);}
+        if (DEBUG>=2) {printf("\nCluster: %d -- Zeroth boundaries: %.3f-%.3f",i,clLB,clRB);}
         for (p=0; p<N; p++) {					/* Compute the direction, size and boundaries of the cluster */
           if (clusters[p]==i) {
             float posit=positions[p];				/* Position */
@@ -327,7 +354,7 @@ void main(int argc, char **argv){
             }
             size++;						/* Increment in size */
             dir=dir+directions[p];				/* Compute resulting direction */
-            if (DEBUG==2) {
+            if (DEBUG==3) {
               if (i==broken) {printf("\n  Position of particle %d (displaced cluster by %.3f): %.3f -- New boundaries: %.3f-%.3f",size,d,posit,clLB,clRB);}
               else {printf("\n  Position of particle %d: %.3f -- New boundaries: %.3f-%.3f",size,posit,clLB,clRB);}
             }
@@ -339,7 +366,7 @@ void main(int argc, char **argv){
         RBclusters[i-1]=clRB;
         clusterprob=abs(dir)/(float)size;			/* Define the jumping probability for the cluster */
         int rclust=rand();
-        if (DEBUG==2) {
+        if (DEBUG>=2) {
           printf("\nPosition: %.3f-%.3f\nSize: %d\nDirection: %d\nProbability: %.3f\nRandom number: %.3f\n",clLB,clRB,size,dir,clusterprob,rclust/(float)RAND_MAX);
         }
         if (rclust<=clusterprob*RAND_MAX) {			/* Jumping probability met */
@@ -349,9 +376,20 @@ void main(int argc, char **argv){
           if (pclLB<0) {pclLB+=L;}				/* PBCs */
           int allowed=1;
           if (dir>0) {						/* If positive direction... */
-            for (p=1; p<i; p++) {
-              if (LBclusters[p-1]<=nclRB) {allowed==0;}		/* Movement isn't allowed if another cluster is next to it */
+            if (DEBUG==3) {printf("Right-moving cluster. New limit if jump: %.3f\n",nclRB);}
+            for (p=0; p<N; p++) {				/* Check movement of cluster is allowed */
+              if (clusters[p]==i) {continue;}
+              float dd=positions[p]-nclRB;			/* Distance to other particles */
+              if (dd<0) {dd=-dd;}				/* Absolute value */
+              if (dd>L/2) {dd=L-dd;}				/* PBCs */
+              if (dd<sigma) {
+                allowed=0;
+                if (DEBUG==3) {printf("  Distance to particle %d: %.3f - allowed: %d\n",p+1,dd,allowed);}
+                break;
+              }							/* Movement isn't allowed if particles are close to it */
+              if (DEBUG==3) {printf("  Distance to particle %d: %.3f - allowed: %d\n",p+1,dd,allowed);}
             }
+            if (DEBUG==3) {printf("Allowed: %d\n",allowed);}
             if (allowed==1) {					/* ...and movement is allowed */
               for (p=0; p<N; p++) {
                 if (clusters[p]==i) {				  /* Move cluster particles up */
@@ -362,9 +400,20 @@ void main(int argc, char **argv){
             }
           }
           else if (dir<0) {					/* If negative direction... */
-            for (p=1; p<i; p++) {
-              if (RBclusters[p-1]>=pclLB) {allowed==0;}		/* Movement isn't allowed if another cluster is next to it */
+            if (DEBUG==3) {printf("Left-moving cluster. New limit if jump: %.3f\n",pclLB);}
+            for (p=0; p<N; p++) {				/* Check movement of cluster is allowed */
+              if (clusters[p]==i) {continue;}
+              float dd=positions[p]-pclLB;			/* Distance to other particles */
+              if (dd<0) {dd=-dd;}				/* Absolute value */
+              if (dd>L/2) {dd=L-dd;}				/* PBCs */
+              if (dd<sigma) {
+                allowed=0;
+                if (DEBUG==3) {printf("  Distance to particle %d: %.3f - allowed: %d\n",p+1,dd,allowed);}
+                break;
+              }							/* Movement isn't allowed if particles are close to it */
+              if (DEBUG==3) {printf("  Distance to particle %d: %.3f - allowed: %d\n",p+1,dd,allowed);}
             }
+            if (DEBUG==3) {printf("Allowed: %d\n",allowed);}
             if (allowed==1) {					/* ...and movement is allowed */
               for (p=0; p<N; p++) {
                 if (clusters[p]==i) {				  /* Move cluster particles down */
@@ -374,12 +423,12 @@ void main(int argc, char **argv){
               }
             }
           }
-          if (DEBUG==2) {
+          if (DEBUG>=2) {
             int ii;
             printf("State of the system:\n");
             for (ii=0; ii<N; ii++) {printf("%.3f ",positions[ii]);}
             printf("\n");
-            for (ii=0; ii<N; ii++) {printf("%d ",directions[ii]);}
+            for (ii=0; ii<N; ii++) {printf("%d ",directions[ii]);}	
             printf("\n");
             for (ii=0; ii<N; ii++) {printf("%d ",clusters[ii]);}
             printf("\n");
@@ -389,7 +438,7 @@ void main(int argc, char **argv){
         /* Only at selected time steps - MEASURING THE SYSTEM */
         if ((step+1)%Tint==0 && step>0) {				
           Nsize[size-1]++;					/* Histogram of the cluster sizes at this time */
-          if (DEBUG==2) {printf("Cluster %d Size %d N[%d]=%d\n",i,size,size,Nsize[size-1]);}
+          if (DEBUG>=2) {printf("Cluster %d Size %d N[%d]=%d\n",i,size,size,Nsize[size-1]);}
           if (dir<0) {Ndir[0]++;}				/* Histogram of the cluster directions at this time */
           else if (dir==0) {Ndir[1]++;}
           else if (dir>0) {Ndir[2]++;}
@@ -402,14 +451,14 @@ void main(int argc, char **argv){
     int tag1, tag2, idist;
     float dist;
     if ((step+1)%Tint==0 && step>0) {				/* Only at selected time steps */
-      if (DEBUG==2) {
+      if (DEBUG==3) {
         printf("\n\n\nState of the system:\n");
         for (tag1=0; tag1<N; tag1++) {printf("%.3f ",positions[tag1]);}
         printf("\n");
         printf("\n\n\nCOMPUTING CORRELATIONS...\n\n");
       }
       for (tag1=0; tag1<L/2; tag1++) {C[tag1]=0;}		/* Reset correlations */
-      if (DEBUG==2) {printf("Correlations reset\n\n");}
+      if (DEBUG==3) {printf("Correlations reset\n\n");}
       for (tag1=0; tag1<N; tag1++) {				/* Sum over particles */
         for (tag2=tag1; tag2<N; tag2++) {			/* Sum over all other particles */
           dist=positions[tag1]-positions[tag2];
@@ -417,7 +466,7 @@ void main(int argc, char **argv){
           if (dist>(L/2)) {dist=L-dist;}
           idist=(int)ceil(dist);
           C[idist]+=1/(float)N;
-          if (DEBUG==2) {
+          if (DEBUG==3) {
             printf("Particles %d and %d\nDistance: %.3f\nInteger distance: %d\nC[%d]=%.3f\n\n",tag1+1,tag2+1,dist,idist,idist,C[idist]);
           }
         }
@@ -425,16 +474,21 @@ void main(int argc, char **argv){
       fprintf(corr, "%d	", step+1);				/* Save correlations */
       for (idist=0; idist<L/2; idist++) {fprintf(corr, "%.10f	", C[idist]);}
       fprintf(corr, "\n");
-      if (DEBUG==2) {printf("\n\nFINISHED COMPUTING CORRELATIONS\n\n\n");}
+      if (DEBUG==3) {printf("\n\nFINISHED COMPUTING CORRELATIONS\n\n\n");}
     }
 
     /* Save total number of clusters and system snapshot */
     if ((step)%(int)100==0) {
       fprintf(nc, "%d	%d\n", step+1, c-1);			/* # of clusters */
       int sn;
-      fprintf(snap, "%d ", step+1);				/* snap */
-      for (sn=0; sn<N; sn++) {fprintf(snap, "%.10f ", positions[sn]);}
+      fprintf(snap, "%d ", step+1);
+      fprintf(snapbis, "%d ", step+1);				/* snap */
+      for (sn=0; sn<N; sn++) {
+        fprintf(snap, "%.10f ", positions[sn]);
+        fprintf(snapbis, "%.10f %d ", positions[sn], directions[sn]);
+      }
       fprintf(snap, "\n");
+      fprintf(snapbis, "\n");
     }
 
     /* Print to terminal */
@@ -463,12 +517,9 @@ void main(int argc, char **argv){
       sprintf(message,"%.2f %% elapsed after %d hours %d minutes and %.2f seconds",(step+1)/(double)Tmax*100,hours_taken,minutes_taken,seconds_taken);
       if (step==0) {printf("%s",message);}
       else if (step<Tmax-1) {
-        if (minutes_taken==1 && seconds_taken<0.001) {printf("\n%s",message);}
-        else {
-          int mm;
-          for (mm=0; mm<96; mm++) {printf("\b");}
-          printf("%s",message);
-        }
+        int mm;
+        for (mm=0; mm<96; mm++) {printf("\b");}
+        printf("%s",message);
       }
       else {printf("\n");}
     }
@@ -504,7 +555,8 @@ void main(int argc, char **argv){
   fclose(rpdc);
 
   fclose(nc);
-  fclose(snap);
+  fclose(snap);	
+  fclose(snapbis);	
   fclose(corr);
 
 

@@ -1,6 +1,6 @@
 /* FILL EACH LINE WITH THE DESIRED VALUE FOR THE INDICATED VARIABLE. FORMAT IS ALSO SPECIFIED */ 
 
-/*1*/	/* Debug variable: 0 = no info printed - 1 = some info printed - 2 = all info printed */	/*INT*/
+/*1*/	/* Debug variable: 0 = no info printed - 1/2 = some info printed - 3 = all info printed */	/*INT*/
 /*2*/	/* Lattice size */										/*INT*/
 /*3*/	/* Tumbling rate */										/*FLOAT*/
 /*4*/	/* Density */											/*FLOAT*/
