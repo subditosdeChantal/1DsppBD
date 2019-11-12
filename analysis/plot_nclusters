@@ -1,11 +1,11 @@
 reset
 set term png #size 1280,1280
 
-dirs = system('ls ../../output_1DSPPdynamics/')
+dirs = system('ls ../../output_1DsppBD/')
 
 do for [dir in dirs] {
-  file = "../../output_1DSPPdynamics/".dir."/nclusters.dat"
-  set output "../../output_1DSPPdynamics/".dir."/nclusters.png"
+  file = "../../output_1DsppBD/".dir."/nclusters.dat"
+  set output "../../output_1DsppBD/".dir."/nclusters.png"
   alpha=dir[6:10]
   phi=dir[13:17]
   T=dir[20:29]

@@ -3,11 +3,11 @@ set term png size 1280,1280
 set palette rgb 33,13,10
 unset colorbox
 
-dirs = system('ls ../../output_1DSPPdynamics/')
+dirs = system('ls ../../output_1DsppBD/')
 
 do for [dir in dirs] {
-  file = "../../output_1DSPPdynamics/".dir."/system_bis.dat"
-  set output "../../output_1DSPPdynamics/".dir."/positions_directions.png"
+  file = "../../output_1DsppBD/".dir."/system_bis.dat"
+  set output "../../output_1DsppBD/".dir."/positions_directions.png"
   alpha=dir[6:10]
   phi=dir[13:17]
   T=dir[20:29]

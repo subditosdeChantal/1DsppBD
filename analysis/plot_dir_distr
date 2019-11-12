@@ -1,13 +1,13 @@
 reset
 #set term png #size 1280,1280
 
-dirs = system('ls ../../output_1DSPPdynamics/')
+dirs = system('ls ../../output_1DsppBD/')
 
 do for [dir in dirs] {
-  file1 = "../../output_1DSPPdynamics/".dir."/dirdistr.dat"
-  file2 = "../../output_1DSPPdynamics/".dir."/swim_dirdistr.dat"
-  file3 = "../../output_1DSPPdynamics/".dir."/result_dirdistr.dat"
-  #set output "../../output_1DSPPdynamics/".dir."/directions.png"
+  file1 = "../../output_1DsppBD/".dir."/dirdistr.dat"
+  file2 = "../../output_1DsppBD/".dir."/swim_dirdistr.dat"
+  file3 = "../../output_1DsppBD/".dir."/result_dirdistr.dat"
+  #set output "../../output_1DsppBD/".dir."/directions.png"
   alpha=dir[6:10]
   phi=dir[13:17]
   T=dir[20:29]
@@ -24,7 +24,7 @@ do for [dir in dirs] {
   replot file3 with lines lt 1 lc rgb "black" lw 3 title "Result"
 
   set term png 
-  set output "../../output_1DSPPdynamics/".dir."/directions.png"
+  set output "../../output_1DsppBD/".dir."/directions.png"
   replot
   set term x11
 }
