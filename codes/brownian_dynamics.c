@@ -35,6 +35,7 @@ void main(int argc, char **argv){
   float beta;					/* 1/KbT */
   float Dt;					/* Translational diffusion coefficient */
   int CMOB;					/* Cluster mobility selector: 1 = motile clusters - 0 = still clusters */
+  int INIT_STATE;				/* Initial state of the system selector: 0=random 1=coarsened 2=gas */
   float cluster_cutoff;				/* Cutoff distance for considering particles belong to same cluster */
   int ierr;					/* Return value of fscanf */
 
@@ -57,6 +58,7 @@ void main(int argc, char **argv){
   ierr=fscanf(pars, "%f\n", & Dt);
   ierr=fscanf(pars, "%d\n", & CMOB);
   ierr=fscanf(pars, "%f\n", & cluster_cutoff);
+  ierr=fscanf(pars, "%d\n", & INIT_STATE);
   fclose(pars);
 
   /* VARIABLES */
@@ -86,7 +88,7 @@ void main(int argc, char **argv){
     //int status = system("mv ");
   }
   char newdir[192];									/* Directory for the new simulation */
-  sprintf(newdir, "%s/sim_a%.3f_f%.3f_t%.10d_L%.5d_D%.2f_Fp%.2f_CMOB%d", output_dir, alpha, fi, Tmax, L, Dt, Fp, CMOB);	
+  sprintf(newdir, "%s/sim_a%.3f_f%.3f_t%.10d_L%.5d_D%.2f_Fp%.2f_beta%.3f_CMOB%d_IS%d", output_dir, alpha, fi, Tmax, L, Dt, Fp, beta, CMOB, INIT_STATE);	
   struct stat st_bis = {0};
   if (stat(newdir, &st_bis) == -1) {
     mkdir(newdir, 0777);
@@ -110,11 +112,11 @@ void main(int argc, char **argv){
   char buffernc[192];
   sprintf(buffernc, "%s/nclusters.dat", newdir);
   nc=fopen(buffernc, "wb");
-  FILE *snap;										/* Saves snapshots of the system */
+  FILE *snap;										/* Saves positions of the particles */
   char buffersnap[192];
   sprintf(buffersnap, "%s/system.dat", newdir);
   snap=fopen(buffersnap, "wb");
-  FILE *snapbis;										/* Saves snapshots of the system */
+  FILE *snapbis;									/* Saves positions and directions of the particles */
   char buffersnapbis[192];
   sprintf(buffersnapbis, "%s/system_bis.dat", newdir);
   snapbis=fopen(buffersnapbis, "wb");
@@ -140,38 +142,77 @@ void main(int argc, char **argv){
   fprintf(pars, "Translational diffusivity: %f\n", Dt);
   fprintf(pars, "Mobility of the clusters: %d\n", CMOB);
   fprintf(pars, "Cluster cutoff distance: %f\n", cluster_cutoff);
+  fprintf(pars, "Initial state of the system: %d\n", INIT_STATE);
   fclose(pars);
 
   if (DEBUG>0) {
     printf("\nSize of the system: %d\n# of particles: %d\nTotal simulation time: %d\nMeasuring interval: %d\n",L,N,(int)Tmax,(int)Tint);
   }
 
-  /* INITIAL STATE OF THE SYSTEM - RANDOM */
-  if (DEBUG==3) {getchar(); printf("\n\n\nINITIALIZING THE SYSTEM\n");}
-  for (i=0; i<N; i++) {						/* Particles are N, ordered from 1 to N */
-    //if (DEBUG==3) {getchar();}
-    float r1=rand()/(float)RAND_MAX*L;				/* Random position (0 to L) */
-    if (DEBUG==3) {printf("Position %d: %.3f\n",i+1,r1);}
-    int busy=0;
-    for (j=0; j<i; j++) {
-      float ddist=r1-positions[j];
-      if (ddist<0) {ddist=-ddist;}
-      if (ddist>L/2) {ddist=L-ddist;}
-      if (DEBUG==3) {printf("  Position %d: %.3f - Distance: %.3f\n",j+1,positions[j],ddist);}
-      if (ddist<sigma) {busy=1; continue;}
-    }
-    if (DEBUG==3) {printf("Busy: %d\n",busy);}
-    if (busy==1) {i=i-1; continue;}
-    positions[i]=r1;
-    int r2=rand()%2;						/* Random direction (1=+x; 0=-x;) */
-    int r3;
-    if (r2==1) {r3=1;}
-    else if (r2==0) {r2=-1; r3=-1;}
-    directions[i]=r2;
-    trueDirections[i]=r3;
-    clusters[i]=0;
-    Nsize[i]=0;
+  /* INITIAL STATE OF THE SYSTEM */
+  if (DEBUG==3) {
+    getchar();
+    printf("\n\n\nINITIALIZING THE SYSTEM");
+    if (INIT_STATE==0) {printf(" - RANDOM\n");}
+    else if (INIT_STATE==2) {printf(" - SINGLE CLUSTER\n");}
+    else if (INIT_STATE==1) {printf(" - DILUTE GAS\n");}
   }
+
+  if (INIT_STATE==0) {							/* RANDOM INITIAL STATE */
+    for (i=0; i<N; i++) {						/* Particles are N, ordered from 1 to N */
+      //if (DEBUG==3) {getchar();}
+      float r1=rand()/(float)RAND_MAX*L;				/* Random position (0 to L) */
+      if (DEBUG==3) {printf("Position %d: %.3f\n",i+1,r1);}
+      int busy=0;
+      for (j=0; j<i; j++) {
+        float ddist=r1-positions[j];
+        if (ddist<0) {ddist=-ddist;}
+        if (ddist>L/2) {ddist=L-ddist;}
+        if (DEBUG==3) {printf("  Position %d: %.3f - Distance: %.3f\n",j+1,positions[j],ddist);}
+        if (ddist<sigma) {busy=1; continue;}
+      }
+      if (DEBUG==3) {printf("Busy: %d\n",busy);}
+      if (busy==1) {i=i-1; continue;}
+      positions[i]=r1;
+      int r2=rand()%2;							/* Random direction (1=+x; 0=-x;) */
+      int r3;
+      if (r2==1) {r3=1;}
+      else if (r2==0) {r2=-1; r3=-1;}
+      directions[i]=r2;
+      trueDirections[i]=r3;
+      clusters[i]=0;
+      Nsize[i]=0;
+    }
+  }
+  else if (INIT_STATE==1) {						/* COARSENED INITIAL STATE */
+    for (i=0; i<N; i++) {						/* Particles are N, ordered from 1 to N */
+      float interval=L/(float)N;
+      positions[i]=i*interval;						/* Ordered particles in a dilute gas at constant distance */
+      int r2=rand()%2;							/* Random direction (1=+x; 0=-x;) */
+      int r3;
+      if (r2==1) {r3=1;}
+      else if (r2==0) {r2=-1; r3=-1;}
+      directions[i]=r2;
+      trueDirections[i]=r3;
+      clusters[i]=0;
+      Nsize[i]=0;
+    }
+  }
+  else if (INIT_STATE==2) {						/* GAS INITIAL STATE */
+    for (i=0; i<N; i++) {						/* Particles are N, ordered from 1 to N */
+      float start_pos=L/(float)2-N/(float)2;
+      positions[i]=start_pos+i;						/* Ordered particles in a single cluster in the middle of the system */
+      int r2=rand()%2;							/* Random direction (1=+x; 0=-x;) */
+      int r3;
+      if (r2==1) {r3=1;}
+      else if (r2==0) {r2=-1; r3=-1;}
+      directions[i]=r2;
+      trueDirections[i]=r3;
+      clusters[i]=0;
+      Nsize[i]=0;
+    }
+  }
+
   if (DEBUG>0) {
     printf("\nIntial state of the system:\n");
     for (i=0; i<N; i++) {printf("%.3f ",positions[i]);}

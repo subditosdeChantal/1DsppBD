@@ -14,3 +14,4 @@
 /*12*/	/* Translational diffusivity */									/*FLOAT*/
 /*13*/	/* Cluster mobility selector: 1 = motile clusters - 0 = still clusters */			/*INT*/
 /*14*/	/* Cutoff distance for considering particles belong to same cluster */				/*FLOAT*/
+/*15*/	/* Initial state of the system selector: 0=random 1=coarsened 2=gas */				/*INT*/
