@@ -79,7 +79,7 @@ void main(int argc, char **argv){
 
   /* FILE PARAMETERS */
   char output_dir[192];									/* Output directory */
-  sprintf(output_dir, "../../output_1DSPPdynamics");
+  sprintf(output_dir, "../../output_1DsppBD");
   struct stat st = {0};
   if (stat(output_dir, &st) == -1) {
     mkdir(output_dir, 0777);
