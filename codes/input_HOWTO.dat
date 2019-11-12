@@ -2,8 +2,8 @@
 
 /*1*/	/* Debug variable: 0 = no info printed - 1/2 = some info printed - 3 = all info printed */	/*INT*/
 /*2*/	/* Lattice size */										/*INT*/
-/*3*/	/* Tumbling rate */										/*FLOAT*/
-/*4*/	/* Density */											/*FLOAT*/
+/*3*/	/* Tumbling rate: STARTING VALUE - INTERVAL - FINAL VALUE */					/*FLOAT*/
+/*4*/	/* Density: STARTING VALUE - INTERVAL - FINAL VALUE */						/*FLOAT*/
 /*5*/	/* Total simulation time */									/*INT*/
 /*6*/	/* Measuring interval */									/*INT*/
 /*7*/	/* Range of the LJ potential */									/*FLOAT*/

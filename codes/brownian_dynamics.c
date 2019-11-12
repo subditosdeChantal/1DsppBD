@@ -23,8 +23,8 @@ void main(int argc, char **argv){
   /* PARAMETERS */
   int DEBUG; 					/* Debug variable: 0 = no info printed - 1 = some info printed - 2 = all info printed */
   int L;					/* Lattice size */
-  float alpha;					/* Tumbling rate */
-  float fi;					/* Density */
+  float alpha, alpha_int, alpha_end;		/* Tumbling rate: initial value, interval, final value */
+  float fi, fi_int, fi_end;			/* Density: initial value, interval, final value */
   int N;					/* # of particles */
   int Tmax;					/* Total simulation time */
   int Tint;					/* Measuring interval */
@@ -44,9 +44,8 @@ void main(int argc, char **argv){
   pars=fopen("input.dat","r");
   ierr=fscanf(pars, "%d\n", & DEBUG);
   ierr=fscanf(pars, "%d\n", & L);
-  ierr=fscanf(pars, "%f\n", & alpha);
-  ierr=fscanf(pars, "%f\n", & fi);
-  N=L*fi;
+  ierr=fscanf(pars, "%f - %f - %f\n", & alpha, & alpha_int, & alpha_end);
+  ierr=fscanf(pars, "%f - %f - %f\n", & fi, & fi_int, & fi_end);
   ierr=fscanf(pars, "%d\n", & Tmax);
   ierr=fscanf(pars, "%d\n", & Tint);
   ierr=fscanf(pars, "%f\n", & Vrange);
@@ -61,7 +60,11 @@ void main(int argc, char **argv){
   ierr=fscanf(pars, "%d\n", & INIT_STATE);
   fclose(pars);
 
+while (alpha<=alpha_end) {			/* START ALPHA LOOP */
+while (fi<=fi_end) {				/* START PHI LOOP */
+
   /* VARIABLES */
+  N=L*fi;
   float positions[N];				/* Particles' positions */
   int directions[N];				/* Particles' swimming directions (1=+x; 0=-x;) */
   float trueDirections[N];			/* Particles' resulting velocities */
@@ -146,7 +149,7 @@ void main(int argc, char **argv){
   fclose(pars);
 
   if (DEBUG>0) {
-    printf("\nSize of the system: %d\n# of particles: %d\nTotal simulation time: %d\nMeasuring interval: %d\n",L,N,(int)Tmax,(int)Tint);
+    printf("\nSize of the system: %d\n# of particles: %d\nTumbling rate: %.3f\nTotal simulation time: %d\nMeasuring interval: %d\n",L,N,alpha,(int)Tmax,(int)Tint);
   }
 
   /* INITIAL STATE OF THE SYSTEM */
@@ -600,5 +603,9 @@ void main(int argc, char **argv){
   fclose(snapbis);	
   fclose(corr);
 
+fi+=fi_int;
+}						/* END OF PHI LOOP */
+alpha+=alpha_int;
+}						/* END OF ALPHA LOOP */
 
 }								/* END OF MAIN */
