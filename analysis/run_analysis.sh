@@ -10,6 +10,10 @@ gnuplot plot_dir_distr
 echo "Plotting total number of clusters evolution..."
 gnuplot plot_nclusters
 
+echo "Plotting correlations..."
+python3 correlations.py
+gnuplot plot_correlations
+
 echo "Plotting system snapshots..."
 gnuplot plot_positions
 gnuplot plot_positions_directions

@@ -187,7 +187,7 @@ while (fi<=fi_end) {				/* START PHI LOOP */
       Nsize[i]=0;
     }
   }
-  else if (INIT_STATE==1) {						/* COARSENED INITIAL STATE */
+  else if (INIT_STATE==1) {						/* GAS INITIAL STATE */
     for (i=0; i<N; i++) {						/* Particles are N, ordered from 1 to N */
       float interval=L/(float)N;
       positions[i]=i*interval;						/* Ordered particles in a dilute gas at constant distance */
@@ -201,7 +201,7 @@ while (fi<=fi_end) {				/* START PHI LOOP */
       Nsize[i]=0;
     }
   }
-  else if (INIT_STATE==2) {						/* GAS INITIAL STATE */
+  else if (INIT_STATE==2) {						/* COARSENED INITIAL STATE */
     for (i=0; i<N; i++) {						/* Particles are N, ordered from 1 to N */
       float start_pos=L/(float)2-N/(float)2;
       positions[i]=start_pos+i;						/* Ordered particles in a single cluster in the middle of the system */
