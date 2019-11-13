@@ -11,7 +11,7 @@
 /*9*/	/* LJ potential particle diameters parameter */							/*INT*/
 /*10*/	/* Propulsion force */										/*FLOAT*/
 /*11*/	/* Beta - Inverse of the temperature energy */							/*FLOAT*/
-/*12*/	/* Translational diffusivity */									/*FLOAT*/
+/*12*/	/* Translational diffusivity: STARTING VALUE - INTERVAL - FINAL VALUE */			/*FLOAT*/
 /*13*/	/* Cluster mobility selector: 1 = motile clusters - 0 = still clusters */			/*INT*/
 /*14*/	/* Cutoff distance for considering particles belong to same cluster */				/*FLOAT*/
 /*15*/	/* Initial state of the system selector: 0=random 1=gas 2=coarsened */				/*INT*/

@@ -33,7 +33,7 @@ void main(int argc, char **argv){
   int sigma;					/* LJ potential particle diameters parameter */
   float Fp;					/* Propulsion force magnitude */
   float beta;					/* 1/KbT */
-  float Dt;					/* Translational diffusion coefficient */
+  float Dt, Dt_int, Dt_end;			/* Translational diffusion coefficient: initial value, interval, final value */
   int CMOB;					/* Cluster mobility selector: 1 = motile clusters - 0 = still clusters */
   int INIT_STATE;				/* Initial state of the system selector: 0=random 1=coarsened 2=gas */
   float cluster_cutoff;				/* Cutoff distance for considering particles belong to same cluster */
@@ -54,7 +54,7 @@ void main(int argc, char **argv){
   ierr=fscanf(pars, "%d\n", & sigma);
   ierr=fscanf(pars, "%f\n", & Fp);
   ierr=fscanf(pars, "%f\n", & beta);
-  ierr=fscanf(pars, "%f\n", & Dt);
+  ierr=fscanf(pars, "%f - %f - %f\n", & Dt, & Dt_int, & Dt_end);
   ierr=fscanf(pars, "%d\n", & CMOB);
   ierr=fscanf(pars, "%f\n", & cluster_cutoff);
   ierr=fscanf(pars, "%d\n", & INIT_STATE);
@@ -62,6 +62,7 @@ void main(int argc, char **argv){
 
 while (alpha<=alpha_end) {			/* START ALPHA LOOP */
 while (fi<=fi_end) {				/* START PHI LOOP */
+while (Dt<=Dt_end) {				/* START DIFFUSIVITY LOOP */
 
   /* VARIABLES */
   N=L*fi;
@@ -607,6 +608,8 @@ while (fi<=fi_end) {				/* START PHI LOOP */
   fclose(snapbis);	
   fclose(corr);
 
+Dt+=Dt_int;
+}						/* END OF DIFFUSIVITY LOOP */
 fi+=fi_int;
 }						/* END OF PHI LOOP */
 alpha+=alpha_int;
