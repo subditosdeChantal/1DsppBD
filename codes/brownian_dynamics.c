@@ -145,7 +145,7 @@ while (fi<=fi_end) {				/* START PHI LOOP */
   fprintf(pars, "Translational diffusivity: %f\n", Dt);
   fprintf(pars, "Mobility of the clusters: %d\n", CMOB);
   fprintf(pars, "Cluster cutoff distance: %f\n", cluster_cutoff);
-  fprintf(pars, "Initial state of the system: %d\n", INIT_STATE);
+  fprintf(pars, "Initial state of the system: %d (0 = random - 1 = gas - 2 = coarsened)\n", INIT_STATE);
   fclose(pars);
 
   if (DEBUG>0) {
