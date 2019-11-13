@@ -258,12 +258,14 @@ while (fi<=fi_end) {				/* START PHI LOOP */
       int v;
       float pos=positions[ptm];				/* Position on the array of the particle */
       Vprime[ptm]=0;					/* Reset the gradient of the potential on that particle */
-      for (v=0; v<N; v++) {
-        if (v==ptm) {continue;}
-        float dist=abs(pos-positions[v]);
-        int posneg=(pos-positions[v])/dist;
-        if (dist>L/2) {dist=L-dist;}
-        Vprime[ptm]+=posneg*LJprime(epsilon,sigma,Vrange,dist);
+      if (epsilon!=0) {
+        for (v=0; v<N; v++) {
+          if (v==ptm) {continue;}
+          float dist=abs(pos-positions[v]);
+          int posneg=(pos-positions[v])/dist;
+          if (dist>L/2) {dist=L-dist;}
+          Vprime[ptm]+=posneg*LJprime(epsilon,sigma,Vrange,dist);
+        }
       }
       if (DEBUG==3) {printf("F: %.10f\n",-Vprime[ptm]);}
 
@@ -558,7 +560,10 @@ while (fi<=fi_end) {				/* START PHI LOOP */
       minutes_taken-=hours_taken*60;
       char message[96];
       sprintf(message,"%.2f %% elapsed after %d hours %d minutes and %.2f seconds",(step+1)/(double)Tmax*100,hours_taken,minutes_taken,seconds_taken);
-      if (step==0) {printf("%s",message);}
+      if (step==0) {
+        printf("\nL=%d phi=%.3f alpha=%.3f epsilon=%.5f v=%.1f beta=%.3f D=%.3f CMOB=%d IS=%d\n",L,fi,alpha,epsilon,Fp,beta,Dt,CMOB,INIT_STATE);
+        printf("%s",message);
+      }
       else if (step<Tmax-1) {
         int mm;
         for (mm=0; mm<96; mm++) {printf("\b");}
