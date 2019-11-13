@@ -163,8 +163,7 @@ while (fi<=fi_end) {				/* START PHI LOOP */
 
   if (INIT_STATE==0) {							/* RANDOM INITIAL STATE */
     for (i=0; i<N; i++) {						/* Particles are N, ordered from 1 to N */
-      //if (DEBUG==3) {getchar();}
-      float r1=rand()/(float)RAND_MAX*L;				/* Random position (0 to L) */
+      float r1=floor(rand()/(float)RAND_MAX*L);				/* Random position (0 to L) */
       if (DEBUG==3) {printf("Position %d: %.3f\n",i+1,r1);}
       int busy=0;
       for (j=0; j<i; j++) {
