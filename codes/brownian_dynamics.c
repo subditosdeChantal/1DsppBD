@@ -91,7 +91,7 @@ while (fi<=fi_end) {				/* START PHI LOOP */
     //int status = system("mv ");
   }
   char newdir[192];									/* Directory for the new simulation */
-  sprintf(newdir, "%s/sim_a%.3f_f%.3f_t%.10d_L%.5d_D%.2f_Fp%.2f_beta%.3f_CMOB%d_IS%d", output_dir, alpha, fi, Tmax, L, Dt, Fp, beta, CMOB, INIT_STATE);	
+  sprintf(newdir, "%s/sim_a%.3f_f%.3f_t%.10d_L%.5d_D%.2f_Fp%.2f_beta%.3f_eps%.5f_CMOB%d_IS%d", output_dir, alpha, fi, Tmax, L, Dt, Fp, beta, epsilon, CMOB, INIT_STATE);	
   struct stat st_bis = {0};
   if (stat(newdir, &st_bis) == -1) {
     mkdir(newdir, 0777);
