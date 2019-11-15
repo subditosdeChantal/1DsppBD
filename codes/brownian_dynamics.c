@@ -29,7 +29,7 @@ void main(int argc, char **argv){
   int Tmax;					/* Total simulation time */
   int Tint;					/* Measuring interval */
   float Vrange;					/* Range of the LJ potential */
-  float epsilon;				/* LJ potential intensity parameter */
+  float epsilon, epsilon_int, epsilon_end;	/* LJ potential intensity parameter */
   int sigma;					/* LJ potential particle diameters parameter */
   float Fp;					/* Propulsion force magnitude */
   float beta;					/* 1/KbT */
@@ -49,8 +49,7 @@ void main(int argc, char **argv){
   ierr=fscanf(pars, "%d\n", & Tmax);
   ierr=fscanf(pars, "%d\n", & Tint);
   ierr=fscanf(pars, "%f\n", & Vrange);
-  ierr=fscanf(pars, "%f\n", & epsilon);
-  epsilon=epsilon/24;
+  ierr=fscanf(pars, "%f - %f - %f\n", & epsilon, & epsilon_int, & epsilon_end);
   ierr=fscanf(pars, "%d\n", & sigma);
   ierr=fscanf(pars, "%f\n", & Fp);
   ierr=fscanf(pars, "%f\n", & beta);
@@ -63,6 +62,8 @@ void main(int argc, char **argv){
 while (alpha<=alpha_end) {			/* START ALPHA LOOP */
 while (fi<=fi_end) {				/* START PHI LOOP */
 while (Dt<=Dt_end) {				/* START DIFFUSIVITY LOOP */
+while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
+  epsilon=epsilon/24;
 
   /* VARIABLES */
   N=L*fi;
@@ -116,13 +117,13 @@ while (Dt<=Dt_end) {				/* START DIFFUSIVITY LOOP */
   char buffernc[192];
   sprintf(buffernc, "%s/nclusters.dat", newdir);
   nc=fopen(buffernc, "wb");
-  FILE *snap;										/* Saves positions of the particles */
+  FILE *snap;										/* Saves positions and directions of the particles for initial times */
   char buffersnap[192];
-  sprintf(buffersnap, "%s/system.dat", newdir);
+  sprintf(buffersnap, "%s/system_beg.dat", newdir);
   snap=fopen(buffersnap, "wb");
-  FILE *snapbis;									/* Saves positions and directions of the particles */
+  FILE *snapbis;									/* Saves positions and directions of the particles for the steady state */
   char buffersnapbis[192];
-  sprintf(buffersnapbis, "%s/system_bis.dat", newdir);
+  sprintf(buffersnapbis, "%s/system_ss.dat", newdir);
   snapbis=fopen(buffersnapbis, "wb");
   FILE *corr;										/* Saves site-to-site occupancy correlations */
   char buffercorr[192];
@@ -527,14 +528,20 @@ while (Dt<=Dt_end) {				/* START DIFFUSIVITY LOOP */
     if ((step)%(int)100==0) {
       fprintf(nc, "%d	%d\n", step+1, c-1);			/* # of clusters */
       int sn;
-      fprintf(snap, "%d ", step+1);
-      fprintf(snapbis, "%d ", step+1);				/* snap */
-      for (sn=0; sn<N; sn++) {
-        fprintf(snap, "%.10f ", positions[sn]);
-        fprintf(snapbis, "%.10f %d ", positions[sn], directions[sn]);
+      if (step<=Tint) {
+        fprintf(snap, "%d ", step+1);				/* snap initial times */
+        for (sn=0; sn<N; sn++) {
+          fprintf(snap, "%.10f %d ", positions[sn], directions[sn]);
+        }
+        fprintf(snap, "\n");
       }
-      fprintf(snap, "\n");
-      fprintf(snapbis, "\n");
+      else if (step>=Tmax-Tint) {
+        fprintf(snapbis, "%d ", step+1);			/* snap final times */
+        for (sn=0; sn<N; sn++) {
+          fprintf(snapbis, "%.10f %d ", positions[sn], directions[sn]);
+        }
+        fprintf(snapbis, "\n");
+      }
     }
 
     /* Print to terminal */
@@ -608,6 +615,9 @@ while (Dt<=Dt_end) {				/* START DIFFUSIVITY LOOP */
   fclose(snapbis);	
   fclose(corr);
 
+epsilon=epsilon*24;
+epsilon+=epsilon_int;
+}						/* END OF POTENTIAL STRENGTH LOOP */
 Dt+=Dt_int;
 }						/* END OF DIFFUSIVITY LOOP */
 fi+=fi_int;
