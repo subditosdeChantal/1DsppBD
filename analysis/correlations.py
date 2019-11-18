@@ -5,12 +5,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import math
 import os
+import sys
+import glob
 
-dirs = os.listdir('../../output_1DsppBD/')
+dirs = glob.glob('../../output_1DsppBD/%s'%(sys.argv[1]))
 
 for dir_name in dirs:
-  filename="../../output_1DsppBD/%s/corr.dat"%(dir_name)
-  output="../../output_1DsppBD/%s/avg_corr.dat"%(dir_name)
+  filename="%s/corr.dat"%(dir_name)
+  output="%s/avg_corr.dat"%(dir_name)
   d=pd.read_csv(filename,sep="\t",header=None,index_col=0)
   C=d.iloc[1,:].copy()
   C=C-C

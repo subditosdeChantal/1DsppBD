@@ -1,17 +1,24 @@
 reset
 #set term png #size 1280,1280
 
-dirs = system('ls ../../output_1DsppBD/')
+dirs_select=ARG1
+
+dirs = system('ls -d ../../output_1DsppBD/'.dirs_select)
 
 do for [dir in dirs] {
-  file1 = "../../output_1DsppBD/".dir."/dirdistr.dat"
-  file2 = "../../output_1DsppBD/".dir."/swim_dirdistr.dat"
-  file3 = "../../output_1DsppBD/".dir."/result_dirdistr.dat"
-  #set output "../../output_1DsppBD/".dir."/directions.png"
-  alpha=dir[6:10]
-  phi=dir[13:17]
-  T=dir[20:29]
-  L=dir[32:36]
+  file1 = dir."/dirdistr.dat"
+  file2 = dir."/swim_dirdistr.dat"
+  file3 = dir."/result_dirdistr.dat"
+  exists1=system('if (test -e '.file1.'); then echo 1; else echo 0; fi')
+  exists2=system('if (test -e '.file2.'); then echo 1; else echo 0; fi')
+  exists3=system('if (test -e '.file3.'); then echo 1; else echo 0; fi')
+  if (exists1=='0' || exists2=='0' || exists3=='0') {print "No files to plot"; continue;}
+  print "Plotting files..."
+  alpha=dir[27:31]
+  phi=dir[34:38]
+  T=dir[41:50]
+  L=dir[53:57]
+  N=(L+0)*(phi+0)
   set xrange [-1:1]
   set yrange [0:1]
   set title "{/Symbol a} = ".alpha." {/Symbol f} = ".phi
@@ -26,7 +33,7 @@ do for [dir in dirs] {
   replot file3 with lines lt 1 lc rgb "black" lw 3 title "Result"
 
   set term png 
-  set output "../../output_1DsppBD/".dir."/directions.png"
+  set output "dir."/directions.png"
   replot
   set term x11
 }
