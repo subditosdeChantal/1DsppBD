@@ -15,7 +15,7 @@ python3 correlations.py
 gnuplot plot_correlations
 
 echo "Plotting system snapshots..."
-gnuplot plot_positions
-gnuplot plot_positions_directions
+gnuplot plot_snapshot_beg
+gnuplot plot_snapshot_ss
 
 echo "Done!"

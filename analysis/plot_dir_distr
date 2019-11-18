@@ -12,6 +12,8 @@ do for [dir in dirs] {
   phi=dir[13:17]
   T=dir[20:29]
   L=dir[32:36]
+  set xrange [-1:1]
+  set yrange [0:1]
   set title "{/Symbol a} = ".alpha." {/Symbol f} = ".phi
   set xlabel "Direction" font "Helvetica,20"
   set ylabel "P(d)" font "Helvetica,20"

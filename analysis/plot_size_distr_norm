@@ -5,17 +5,21 @@ dirs = system('ls ../../output_1DsppBD/')
 
 do for [dir in dirs] {
   file = "../../output_1DsppBD/".dir."/sizedistr_norm.dat"
-  set output "../../output_1DsppBD/".dir."/sizedistr_norm.png"
-  alpha=dir[6:10]
-  phi=dir[13:17]
-  T=dir[20:29]
-  L=dir[32:36]
-  set title "{/Symbol a} = ".alpha." {/Symbol f} = ".phi
-  set xlabel "Size" font "Helvetica,20"
-  set ylabel "P(l)" font "Helvetica,20"
-  set logscale y 10
-  set format y "10^{%L}"
-  set tics font "Helvetica,20"
-  unset key
-  plot file with points lc rgb 'blue' pt 9
+  if (system('file -f '.file)) {
+    set output "../../output_1DsppBD/".dir."/sizedistr_norm.png"
+    alpha=dir[6:10]
+    phi=dir[13:17]
+    T=dir[20:29]
+    L=dir[32:36]
+    set xrange [0:1]
+    set yrange [0:1]
+    set title "{/Symbol a} = ".alpha." {/Symbol f} = ".phi
+    set xlabel "Size" font "Helvetica,20"
+    set ylabel "P(l)" font "Helvetica,20"
+    set logscale y 10
+    set format y "10^{%L}"
+    set tics font "Helvetica,20"
+    unset key
+    plot file with points lc rgb 'blue' pt 9
+  }
 }

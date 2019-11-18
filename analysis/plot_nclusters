@@ -17,7 +17,7 @@ do for [dir in dirs] {
   #set logscale y 10
   #set format y "10^{%L}"
   #set logscale x 10
-  #set format x "10^{%L}"
+  set format x "10^{%L}"
   set tics font "Helvetica,20"
   unset key
   plot file with points lc rgb 'blue' pt 9
