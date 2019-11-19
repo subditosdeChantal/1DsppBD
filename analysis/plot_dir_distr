@@ -14,14 +14,20 @@ do for [dir in dirs] {
   exists3=system('if (test -e '.file3.'); then echo 1; else echo 0; fi')
   if (exists1=='0' || exists2=='0' || exists3=='0') {print "No files to plot"; continue;}
   print "Plotting files..."
-  alpha=dir[27:31]
-  phi=dir[34:38]
-  T=dir[41:50]
-  L=dir[53:57]
-  N=(L+0)*(phi+0)
+  alpha=dir[27:31]+0
+  phi=dir[34:38]+0
+  T=dir[41:50]+0
+  L=dir[53:57]+0
+  N=L*phi
+  D=dir[60:63]+0
+  v=dir[67:70]+0
+  beta=dir[76:80]+0
+  eps=dir[85:91]+0
+  CMOB=dir[97:97]+0
+  IS=dir[101:101]+0
+  set title sprintf("N = %d  epsilon = %.5f  beta = %.3f  D = %.2f",N,eps,beta,D) font "Helvetica,20"
   set xrange [-1:1]
   set yrange [0:1]
-  set title "{/Symbol a} = ".alpha." {/Symbol f} = ".phi
   set xlabel "Direction" font "Helvetica,20"
   set ylabel "P(d)" font "Helvetica,20"
   #set logscale y 10
@@ -33,7 +39,6 @@ do for [dir in dirs] {
   replot file3 with lines lt 1 lc rgb "black" lw 3 title "Result"
 
   set term png 
-  set output "dir."/directions.png"
+  set output dir."/directions.png"
   replot
-  set term x11
 }

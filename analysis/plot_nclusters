@@ -12,12 +12,18 @@ do for [dir in dirs] {
   if (s=='0') {print "No file to plot"; continue;}
   print "Plotting file..."
   set output dir."/nclusters.png"
-  alpha=dir[27:31]
-  phi=dir[34:38]
-  T=dir[41:50]
-  L=dir[53:57]
-  N=(L+0)*(phi+0)
-  set title sprintf("N = %d",N)
+  alpha=dir[27:31]+0
+  phi=dir[34:38]+0
+  T=dir[41:50]+0
+  L=dir[53:57]+0
+  N=L*phi
+  D=dir[60:63]+0
+  v=dir[67:70]+0
+  beta=dir[76:80]+0
+  eps=dir[85:91]+0
+  CMOB=dir[97:97]+0
+  IS=dir[101:101]+0
+  set title sprintf("N = %d  epsilon = %.5f  beta = %.3f  D = %.2f",N,eps,beta,D) font "Helvetica,20"
   set xlabel "Time" font "Helvetica,20"
   set ylabel "Number of clusters" font "Helvetica,20"
   #set logscale y 10

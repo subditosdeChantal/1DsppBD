@@ -18,50 +18,56 @@ float LJprime(float epsilon, int sigma, float Vrange, float x) {
 
 void main(int argc, char **argv){
 
-  srand(time(NULL));				/* Initialize random number generator */
+  srand(time(NULL));					/* Initialize random number generator */
 
   /* PARAMETERS */
-  int DEBUG; 					/* Debug variable: 0 = no info printed - 1 = some info printed - 2 = all info printed */
-  int L;					/* Lattice size */
-  float alpha, alpha_int, alpha_end;		/* Tumbling rate: initial value, interval, final value */
-  float fi, fi_int, fi_end;			/* Density: initial value, interval, final value */
-  int N;					/* # of particles */
-  int Tmax;					/* Total simulation time */
-  int Tint;					/* Measuring interval */
-  float Vrange;					/* Range of the LJ potential */
-  float epsilon, epsilon_int, epsilon_end;	/* LJ potential intensity parameter */
-  int sigma;					/* LJ potential particle diameters parameter */
-  float Fp;					/* Propulsion force magnitude */
-  float beta;					/* 1/KbT */
-  float Dt, Dt_int, Dt_end;			/* Translational diffusion coefficient: initial value, interval, final value */
-  int CMOB;					/* Cluster mobility selector: 1 = motile clusters - 0 = still clusters */
-  int INIT_STATE;				/* Initial state of the system selector: 0=random 1=coarsened 2=gas */
-  float cluster_cutoff;				/* Cutoff distance for considering particles belong to same cluster */
-  int ierr;					/* Return value of fscanf */
+  int DEBUG; 						/* Debug variable: 0 = no info printed - 1 = some info printed - 2 = all info printed */
+  int L;						/* Lattice size */
+  float alpha, alpha_0, alpha_int, alpha_end;		/* Tumbling rate: initial value, interval, final value */
+  float fi, fi_0, fi_int, fi_end;			/* Density: initial value, interval, final value */
+  int N;						/* # of particles */
+  int Tmax;						/* Total simulation time */
+  int Tint;						/* Measuring interval */
+  float Vrange;						/* Range of the LJ potential */
+  float epsilon, epsilon_0, epsilon_int, epsilon_end;	/* LJ potential intensity parameter */
+  int sigma;						/* LJ potential particle diameters parameter */
+  float Fp;						/* Propulsion force magnitude */
+  float beta, beta_0, beta_int, beta_end;		/* 1/KbT: initial value, interval, final value */
+  float Dt, Dt_0, Dt_int, Dt_end;			/* Translational diffusion coefficient: initial value, interval, final value */
+  int CMOB;						/* Cluster mobility selector: 1 = motile clusters - 0 = still clusters */
+  int INIT_STATE;					/* Initial state of the system selector: 0=random 1=coarsened 2=gas */
+  float cluster_cutoff;					/* Cutoff distance for considering particles belong to same cluster */
+  int ierr;						/* Return value of fscanf */
 
   /* READ PARAMETERS */
   FILE *pars;
   pars=fopen("input.dat","r");
   ierr=fscanf(pars, "%d\n", & DEBUG);
   ierr=fscanf(pars, "%d\n", & L);
-  ierr=fscanf(pars, "%f - %f - %f\n", & alpha, & alpha_int, & alpha_end);
-  ierr=fscanf(pars, "%f - %f - %f\n", & fi, & fi_int, & fi_end);
+  ierr=fscanf(pars, "%f - %f - %f\n", & alpha_0, & alpha_int, & alpha_end);
+  ierr=fscanf(pars, "%f - %f - %f\n", & fi_0, & fi_int, & fi_end);
   ierr=fscanf(pars, "%d\n", & Tmax);
   ierr=fscanf(pars, "%d\n", & Tint);
   ierr=fscanf(pars, "%f\n", & Vrange);
-  ierr=fscanf(pars, "%f - %f - %f\n", & epsilon, & epsilon_int, & epsilon_end);
+  ierr=fscanf(pars, "%f - %f - %f\n", & epsilon_0, & epsilon_int, & epsilon_end);
   ierr=fscanf(pars, "%d\n", & sigma);
   ierr=fscanf(pars, "%f\n", & Fp);
-  ierr=fscanf(pars, "%f\n", & beta);
-  ierr=fscanf(pars, "%f - %f - %f\n", & Dt, & Dt_int, & Dt_end);
+  ierr=fscanf(pars, "%f - %f - %f\n", & beta_0, & beta_int, & beta_end);
+  ierr=fscanf(pars, "%f - %f - %f\n", & Dt_0, & Dt_int, & Dt_end);
   ierr=fscanf(pars, "%d\n", & CMOB);
   ierr=fscanf(pars, "%f\n", & cluster_cutoff);
   ierr=fscanf(pars, "%d\n", & INIT_STATE);
   fclose(pars);
 
+alpha=alpha_0;
 while (alpha<=alpha_end) {			/* START ALPHA LOOP */
+fi=fi_0;
 while (fi<=fi_end) {				/* START PHI LOOP */
+beta=beta_0;
+while (beta<=beta_end) {			/* START TEMPERATURE LOOP */
+Dt=Dt_0;
 while (Dt<=Dt_end) {				/* START DIFFUSIVITY LOOP */
+epsilon=epsilon_0;
 while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
   epsilon=epsilon/24;
 
@@ -620,6 +626,8 @@ epsilon+=epsilon_int;
 }						/* END OF POTENTIAL STRENGTH LOOP */
 Dt+=Dt_int;
 }						/* END OF DIFFUSIVITY LOOP */
+beta+=beta_int;
+}						/* END OF TEMPERATURE LOOP */
 fi+=fi_int;
 }						/* END OF PHI LOOP */
 alpha+=alpha_int;
