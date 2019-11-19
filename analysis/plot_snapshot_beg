@@ -17,6 +17,7 @@ do for [dir in dirs] {
   alpha=dir[27:31]+0
   phi=dir[34:38]+0
   T=dir[41:50]+0
+  Tint=sqrt(T)
   L=dir[53:57]+0
   N=L*phi
   D=dir[60:63]+0
@@ -29,7 +30,7 @@ do for [dir in dirs] {
   set xlabel "Position" font "Helvetica,20"
   set ylabel "Time" font "Helvetica,20"
   set tics font "Helvetica,20"
-  set yrange [0:10000]
+  set yrange [0:Tint]
   set xrange [0:L+0]
   unset key
   plot for [i=1:N] file using 2*i:1:2*i+1 with points lc palette pt 7 ps 1

@@ -13,6 +13,7 @@ dirs = glob.glob('../../output_1DsppBD/%s'%(sys.argv[1]))
 for dir_name in dirs:
   filename="%s/corr.dat"%(dir_name)
   output="%s/avg_corr.dat"%(dir_name)
+  if (os.path.isfile(output)): continue
   d=pd.read_csv(filename,sep="\t",header=None,index_col=0)
   C=d.iloc[1,:].copy()
   C=C-C

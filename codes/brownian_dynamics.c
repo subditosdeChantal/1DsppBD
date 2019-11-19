@@ -31,7 +31,7 @@ void main(int argc, char **argv){
   float Vrange;						/* Range of the LJ potential */
   float epsilon, epsilon_0, epsilon_int, epsilon_end;	/* LJ potential intensity parameter */
   int sigma;						/* LJ potential particle diameters parameter */
-  float Fp;						/* Propulsion force magnitude */
+  float Fp, Fp_0, Fp_int, Fp_end;			/* Propulsion force magnitude */
   float beta, beta_0, beta_int, beta_end;		/* 1/KbT: initial value, interval, final value */
   float Dt, Dt_0, Dt_int, Dt_end;			/* Translational diffusion coefficient: initial value, interval, final value */
   int CMOB;						/* Cluster mobility selector: 1 = motile clusters - 0 = still clusters */
@@ -51,7 +51,7 @@ void main(int argc, char **argv){
   ierr=fscanf(pars, "%f\n", & Vrange);
   ierr=fscanf(pars, "%f - %f - %f\n", & epsilon_0, & epsilon_int, & epsilon_end);
   ierr=fscanf(pars, "%d\n", & sigma);
-  ierr=fscanf(pars, "%f\n", & Fp);
+  ierr=fscanf(pars, "%f - %f - %f\n", & Fp_0, & Fp_int, & Fp_end);
   ierr=fscanf(pars, "%f - %f - %f\n", & beta_0, & beta_int, & beta_end);
   ierr=fscanf(pars, "%f - %f - %f\n", & Dt_0, & Dt_int, & Dt_end);
   ierr=fscanf(pars, "%d\n", & CMOB);
@@ -63,6 +63,8 @@ alpha=alpha_0;
 while (alpha<=alpha_end) {			/* START ALPHA LOOP */
 fi=fi_0;
 while (fi<=fi_end) {				/* START PHI LOOP */
+Fp=Fp_0;
+while (Fp<=Fp_end) {				/* START ACTIVITY LOOP */
 beta=beta_0;
 while (beta<=beta_end) {			/* START TEMPERATURE LOOP */
 Dt=Dt_0;
@@ -500,6 +502,31 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
 
     }								/* End of cluster dynamics */
 
+    else {							/* ONLY MEASURE SIZES AND DIRECTIONS */
+      if (DEBUG==3) {getchar(); printf("\n\n\nMEASURING CLUSTERS - t=%d\n\n\n",step+1);}
+      int dir, size;						/* Cluster direction and size variables */
+      int p;
+      for (i=1; i<c; i++) {
+        dir=0, size=0;						/* Reset direction and size for new cluster */
+        for (p=0; p<N; p++) {					/* Compute the direction, size and boundaries of the cluster */
+          if (clusters[p]==i) {
+            size++;						/* Increment in size */
+            dir=dir+directions[p];				/* Compute resulting direction */
+          }
+        }
+        if (DEBUG>=2) {printf("\nCluster: %d -- Size: %d",i,size);}
+  
+        /* Only at selected time steps - MEASURING THE SYSTEM */
+        if ((step+1)%Tint==0 && step>0) {				
+          Nsize[size-1]++;					/* Histogram of the cluster sizes at this time */
+          if (DEBUG>=2) {printf("Cluster %d Size %d N[%d]=%d\n",i,size,size,Nsize[size-1]);}
+          if (dir<0) {Ndir[0]++;}				/* Histogram of the cluster directions at this time */
+          else if (dir==0) {Ndir[1]++;}
+          else if (dir>0) {Ndir[2]++;}
+        }
+      }
+    }
+
     /* SPATIAL CORRELATIONS */  
     int tag1, tag2, idist;
     float dist;
@@ -628,6 +655,8 @@ Dt+=Dt_int;
 }						/* END OF DIFFUSIVITY LOOP */
 beta+=beta_int;
 }						/* END OF TEMPERATURE LOOP */
+Fp+=Fp_int;
+}						/* END OF ACTIVITY LOOP */
 fi+=fi_int;
 }						/* END OF PHI LOOP */
 alpha+=alpha_int;
