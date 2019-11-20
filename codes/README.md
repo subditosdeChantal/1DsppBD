@@ -11,5 +11,3 @@ Esta carpeta contiene los códigos de simulación. Hay 3 ficheros además del ej
 
 * *Fichero 3*: __input_HOWTO.dat__
   * Contiene instrucciones para pasar parámetros en __input.dat__. Se explica qué parámetro corresponde a cada línea del fichero y cómo se debe interpretar e indicar dicho parámetro.
-
-**IMPORTANTE**: Al menos de momento, las dos carpetas del repositorio deben estar a distancia __../..__ de home para que todo funcione correctamente. El repositorio debe colocarse en home por lo tanto.

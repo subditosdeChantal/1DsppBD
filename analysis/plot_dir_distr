@@ -26,14 +26,15 @@ do for [dir in dirs] {
   T=dir[41:50]+0
   L=dir[53:57]+0
   N=L*phi
-  D=dir[60:63]+0
-  v=dir[67:70]+0
-  beta=dir[76:80]+0
-  eps=dir[85:91]+0
-  CMOB=dir[97:97]+0
-  IS=dir[101:101]+0
-  Tint=dir[107:111]+0
-  set title sprintf("N = %d  eps = %.2f  beta = %.3f  D = %.2f  v = %.1f",N,eps,beta,D,v) font "Helvetica,20"
+  mu=dir[61:64]+0
+  v=dir[68:71]+0
+  beta=dir[77:81]+0
+  D=mu/beta
+  eps=dir[86:92]+0
+  CMOB=dir[98:98]+0
+  IS=dir[102:102]+0
+  Tint=dir[108:112]+0
+  set title sprintf("N=%d  alpha=%.2f  D=%.2f  v=%.1f",N,alpha,D,v) font "Helvetica,20"
   set xrange [-1:1]
   set yrange [0:1]
   set xlabel "Direction" font "Helvetica,20"
