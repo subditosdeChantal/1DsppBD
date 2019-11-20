@@ -101,7 +101,7 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
     //int status = system("mv ");
   }
   char newdir[192];									/* Directory for the new simulation */
-  sprintf(newdir, "%s/sim_a%.3f_f%.3f_t%.10d_L%.5d_D%.2f_Fp%.2f_beta%.3f_eps%.5f_CMOB%d_IS%d", output_dir, alpha, fi, Tmax, L, Dt, Fp, beta, epsilon, CMOB, INIT_STATE);	
+  sprintf(newdir, "%s/sim_a%.3f_f%.3f_t%.10d_L%.5d_D%.2f_Fp%.2f_beta%.3f_eps%.5f_CMOB%d_IS%d_tint%.5d", output_dir, alpha, fi, Tmax, L, Dt, Fp, beta, epsilon, CMOB, INIT_STATE,Tint);	
   struct stat st_bis = {0};
   if (stat(newdir, &st_bis) == -1) {
     mkdir(newdir, 0777);
@@ -558,7 +558,7 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
     }
 
     /* Save total number of clusters and system snapshot */
-    if ((step)%(int)100==0) {
+    if ((step)%(int)sqrt(Tint)==0) {
       fprintf(nc, "%d	%d\n", step+1, c-1);			/* # of clusters */
       int sn;
       if (step<=Tint) {
