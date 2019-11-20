@@ -33,8 +33,9 @@ void main(int argc, char **argv){
   int sigma;						/* LJ potential particle diameters parameter */
   float Fp, Fp_0, Fp_int, Fp_end;			/* Propulsion force magnitude */
   float beta, beta_0, beta_int, beta_end;		/* 1/KbT: initial value, interval, final value */
-  float Dt, Dt_0, Dt_int, Dt_end;			/* Translational diffusion coefficient: initial value, interval, final value */
-  int CMOB;						/* Cluster mobility selector: 1 = motile clusters - 0 = still clusters */
+  float mu, mu_0, mu_int, mu_end;			/* Friction coefficient: initial value, interval, final value */
+  float Dt;						/* Translational diffusion coefficient*/
+  int CMOB, CMOB_0, CMOB_int, CMOB_end;			/* Cluster mobility selector: 1 = motile clusters - 0 = still clusters */
   int INIT_STATE;					/* Initial state of the system selector: 0=random 1=coarsened 2=gas */
   float cluster_cutoff;					/* Cutoff distance for considering particles belong to same cluster */
   int ierr;						/* Return value of fscanf */
@@ -52,9 +53,9 @@ void main(int argc, char **argv){
   ierr=fscanf(pars, "%f - %f - %f\n", & epsilon_0, & epsilon_int, & epsilon_end);
   ierr=fscanf(pars, "%d\n", & sigma);
   ierr=fscanf(pars, "%f - %f - %f\n", & Fp_0, & Fp_int, & Fp_end);
+  ierr=fscanf(pars, "%f - %f - %f\n", & mu_0, & mu_int, & mu_end);
   ierr=fscanf(pars, "%f - %f - %f\n", & beta_0, & beta_int, & beta_end);
-  ierr=fscanf(pars, "%f - %f - %f\n", & Dt_0, & Dt_int, & Dt_end);
-  ierr=fscanf(pars, "%d\n", & CMOB);
+  ierr=fscanf(pars, "%d - %d - %d\n", & CMOB_0, & CMOB_int, & CMOB_end);
   ierr=fscanf(pars, "%f\n", & cluster_cutoff);
   ierr=fscanf(pars, "%d\n", & INIT_STATE);
   fclose(pars);
@@ -67,14 +68,17 @@ Fp=Fp_0;
 while (Fp<=Fp_end) {				/* START ACTIVITY LOOP */
 beta=beta_0;
 while (beta<=beta_end) {			/* START TEMPERATURE LOOP */
-Dt=Dt_0;
-while (Dt<=Dt_end) {				/* START DIFFUSIVITY LOOP */
+mu=mu_0;
+while (mu<=mu_end) {				/* START MOBILITY LOOP */
+CMOB=CMOB_0;
+while (CMOB<=CMOB_end) {			/* START CLUSTER EXPLICIT COLLECTIVE DYNAMICS LOOP */
 epsilon=epsilon_0;
 while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
   epsilon=epsilon/24;
 
   /* VARIABLES */
   N=L*fi;
+  Dt=mu/beta;
   float positions[N];				/* Particles' positions */
   int directions[N];				/* Particles' swimming directions (1=+x; 0=-x;) */
   float trueDirections[N];			/* Particles' resulting velocities */
@@ -101,7 +105,7 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
     //int status = system("mv ");
   }
   char newdir[192];									/* Directory for the new simulation */
-  sprintf(newdir, "%s/sim_a%.3f_f%.3f_t%.10d_L%.5d_D%.2f_Fp%.2f_beta%.3f_eps%.5f_CMOB%d_IS%d_tint%.5d", output_dir, alpha, fi, Tmax, L, Dt, Fp, beta, epsilon, CMOB, INIT_STATE,Tint);	
+  sprintf(newdir, "%s/sim_a%.3f_f%.3f_t%.10d_L%.5d_mu%.2f_Fp%.2f_beta%.3f_eps%.5f_CMOB%d_IS%d_tint%.5d", output_dir, alpha, fi, Tmax, L, mu, Fp, beta, epsilon, CMOB, INIT_STATE,Tint);	
   struct stat st_bis = {0};
   if (stat(newdir, &st_bis) == -1) {
     mkdir(newdir, 0777);
@@ -152,7 +156,7 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
   fprintf(pars, "LJ potential particle diameters parameter (sigma): %d\n", sigma);
   fprintf(pars, "Propulsion force: %f\n", Fp);
   fprintf(pars, "Beta - Inverse of the temperature energy: %f\n", beta);
-  fprintf(pars, "Translational diffusivity: %f\n", Dt);
+  fprintf(pars, "Mu - Friction coefficient / mobility: %f\n", Dt);
   fprintf(pars, "Mobility of the clusters: %d\n", CMOB);
   fprintf(pars, "Cluster cutoff distance: %f\n", cluster_cutoff);
   fprintf(pars, "Initial state of the system: %d (0 = random - 1 = gas - 2 = coarsened)\n", INIT_STATE);
@@ -592,7 +596,7 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
       }
       getchar();
     }
-    else {
+    else if (DEBUG==0) {
       tt = clock() - t_0;
       double seconds_taken=((double)tt)/CLOCKS_PER_SEC;
       int minutes_taken=(int)floor(seconds_taken/(float)60);
@@ -651,8 +655,10 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
 epsilon=epsilon*24;
 epsilon+=epsilon_int;
 }						/* END OF POTENTIAL STRENGTH LOOP */
-Dt+=Dt_int;
-}						/* END OF DIFFUSIVITY LOOP */
+CMOB+=CMOB_int;
+}						/* END OF CLUSTER EXPLICIT COLLECTIVE DYNAMICS LOOP */
+mu+=mu_int;
+}						/* END OF MOBILITY LOOP */
 beta+=beta_int;
 }						/* END OF TEMPERATURE LOOP */
 Fp+=Fp_int;
