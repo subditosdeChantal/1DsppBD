@@ -115,7 +115,7 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
     //int status = system("mv ");
   }
   char newdir[192];									/* Directory for the new simulation */
-  sprintf(newdir, "%s/sim_a%.3f_f%.3f_t%.10d_L%.5d_mu%.2f_Fp%.2f_beta%.3f_eps%.5f_CMOB%d_IS%d_tint%.5d", output_dir, alpha, fi, Tmax, L, mu, Fp, beta, epsilon, CMOB, INIT_STATE,Tint);	
+  sprintf(newdir, "%s/sim_a%.3f_f%.3f_t%.10d_L%.5d_D%.3f_Fp%.2f_eps%.5f_CMOB%d_IS%d_tint%.5d", output_dir, alpha, fi, Tmax, L, Dt, Fp, epsilon, CMOB, INIT_STATE,Tint);	
   struct stat st_bis = {0};
   if (stat(newdir, &st_bis) == -1) {
     mkdir(newdir, 0777);
@@ -170,7 +170,8 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
   fprintf(pars, "LJ potential particle diameters parameter (sigma): %d\n", sigma);
   fprintf(pars, "Propulsion force: %f\n", Fp);
   fprintf(pars, "Beta - Inverse of the temperature energy: %f\n", beta);
-  fprintf(pars, "Mu - Friction coefficient / mobility: %f\n", Dt);
+  fprintf(pars, "Mu - Friction coefficient / mobility: %f\n", mu);
+  fprintf(pars, "Tranlational diffusivity: %f\n", Dt);
   fprintf(pars, "Mobility of the clusters: %d\n", CMOB);
   fprintf(pars, "Cluster cutoff distance: %f\n", cluster_cutoff);
   fprintf(pars, "Initial state of the system: %d (0 = random - 1 = gas - 2 = coarsened)\n", INIT_STATE);

@@ -17,19 +17,17 @@ do for [dir in dirs] {
   T=dir[41:50]+0
   L=dir[53:57]+0
   N=L*phi
-  mu=dir[61:64]+0
+  D=dir[60:64]+0
   v=dir[68:71]+0
-  beta=dir[77:81]+0
-  D=mu/beta
-  eps=dir[86:92]+0
-  CMOB=dir[98:98]+0
-  IS=dir[102:102]+0
-  Tint=dir[108:112]+0
+  eps=dir[76:82]+0
+  CMOB=dir[88:88]+0
+  IS=dir[92:92]+0
+  Tint=dir[98:102]+0
   set title sprintf("N=%d  alpha=%.2f  D=%.2f  v=%.1f",N,alpha,D,v) font "Helvetica,20"
   set xlabel "Distance" font "Helvetica,20"
   set ylabel "C(x)" font "Helvetica,20"
   set xrange [0:(L+0)/2]
-  set yrange [0:1]
+  set yrange [0:1.5]
   #set logscale y 10
   #set format y "10^{%L}"
   #set logscale x 10
