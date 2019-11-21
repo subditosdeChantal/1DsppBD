@@ -14,6 +14,10 @@ echo "Plotting total number of clusters evolution..."
 gnuplot -c plot_nclusters $1
 
 echo ""
+echo "Plotting energy evolution..."
+gnuplot -c plot_energy $1
+
+echo ""
 echo "Computing correlations..."
 python3 correlations.py $1
 

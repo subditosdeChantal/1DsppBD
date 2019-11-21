@@ -8,6 +8,14 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+/* POTENTIAL FUNCTION */
+float LJ(float epsilon, int sigma, float Vrange, float x) {
+  float result;
+  if (x<Vrange) {result=4*epsilon*(pow((sigma/x),12)-pow((sigma/x),6)-pow((1/(float)2.5),12)+pow((1/(float)2.5),6));}	//4*eps*((sigma/r)**12-(sigma/r)**6)
+  else {result=0;}
+  return result;
+}
+
 /* GRADIENT OF THE POTENTIAL FUNCTION */
 float LJprime(float epsilon, int sigma, float Vrange, float x) {
   float result;
@@ -83,6 +91,7 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
   int directions[N];				/* Particles' swimming directions (1=+x; 0=-x;) */
   float trueDirections[N];			/* Particles' resulting velocities */
   int i, j;					/* Counter */
+  float V[N];					/* Potential on each particle*/
   float Vprime[N];				/* Gradient of the potential on each particle*/
   int step;					/* Time step counter */
   int clusters[N];				/* Particles' clusters */
@@ -93,6 +102,7 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
   int Ndir_swim[2]={0,0};			/* Vector with the number of particles swimming in each direction : +, - */
   int Ndir_res[3]={0,0,0};			/* Vector with the number of particles moving in each direction : +, -, 0 */
   float C[L/2];					/* Correlations */
+  float E=0;					/* Energy of the system (normalized by the number of particles) */
   clock_t tt;					/* Real time */
   clock_t t_0=clock();				/* Real starting time */
 
@@ -125,6 +135,10 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
   FILE *rpdc;										/* Saves the number of particles moving (result of LJ) in each direction overall */
   char bufferrpdc[192];
   sprintf(bufferrpdc, "%s/result_dirdistr.dat", newdir);
+  FILE *nrj;										/* Saves the energy of the system */
+  char buffernrj[192];
+  sprintf(buffernrj, "%s/energy.dat", newdir);
+  nrj=fopen(buffernrj, "wb");
   FILE *nc;										/* Saves the total number of clusters */
   char buffernc[192];
   sprintf(buffernc, "%s/nclusters.dat", newdir);
@@ -271,6 +285,7 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
       /* POTENTIAL */
       int v;
       float pos=positions[ptm];				/* Position on the array of the particle */
+      V[ptm]=0;						/* Reset the potential on that particle */
       Vprime[ptm]=0;					/* Reset the gradient of the potential on that particle */
       if (epsilon!=0) {
         for (v=0; v<N; v++) {
@@ -278,6 +293,7 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
           float dist=abs(pos-positions[v]);
           int posneg=(pos-positions[v])/dist;
           if (dist>L/2) {dist=L-dist;}
+          V[ptm]+=(-1)*posneg*LJ(epsilon,sigma,Vrange,dist);
           Vprime[ptm]+=posneg*LJprime(epsilon,sigma,Vrange,dist);
         }
       }
@@ -561,18 +577,22 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
       if (DEBUG==3) {printf("\n\nFINISHED COMPUTING CORRELATIONS\n\n\n");}
     }
 
-    /* Save total number of clusters and system snapshot */
-    if ((step)%(int)sqrt(Tint)==0) {
-      fprintf(nc, "%d	%d\n", step+1, c-1);			/* # of clusters */
+    /* Save total number of clusters and system snapshot and measure the Energy of the system */
+    if ((step+1)%(int)sqrt(Tint)==0 && step>0) {
       int sn;
-      if (step<=Tint) {
+      E=0;							/* reset energy */
+      for (sn=0; sn<N; sn++) {E+=0.5*pow(trueDirections[sn],2)+V[sn];}
+      E=E/(float)N;						/* compute and normalize E */
+      fprintf(nrj, "%d	%f\n", step+1, E);			/* save E */
+      fprintf(nc, "%d	%d\n", step+1, c-1);			/* # of clusters */
+      if (step+1<=Tint) {
         fprintf(snap, "%d ", step+1);				/* snap initial times */
         for (sn=0; sn<N; sn++) {
           fprintf(snap, "%.10f %d ", positions[sn], directions[sn]);
         }
         fprintf(snap, "\n");
       }
-      else if (step>=Tmax-Tint) {
+      else if (step+1>=Tmax-Tint) {
         fprintf(snapbis, "%d ", step+1);			/* snap final times */
         for (sn=0; sn<N; sn++) {
           fprintf(snapbis, "%.10f %d ", positions[sn], directions[sn]);
@@ -647,6 +667,7 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
   for (i=0; i<3; i++) {if (Ndir_res[i]!=0) {fprintf(rpdc, "%d	%.10f\n", i-1, Ndir_res[i]/(float)(Ndir_res[0]+Ndir_res[1]+Ndir_res[2]));}} 
   fclose(rpdc);
 
+  fclose(nrj);
   fclose(nc);
   fclose(snap);	
   fclose(snapbis);	
