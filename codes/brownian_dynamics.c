@@ -339,8 +339,9 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
         if (dist<sigma) {allowed=0;}
         if (DEBUG==3) {printf("  Distance to particle %d: %.3f - allowed: %d\n",v+1,dist,allowed);}
       }
-      if (allowed==1) {positions[ptm]=npos;}
-      if (DEBUG>=2) {printf("Real new position: %.3f\n",positions[ptm]);}
+      if (allowed==1) {positions[ptm]=npos; trueDirections[ptm]=npos-pos;}
+      else {trueDirections[ptm]=0;}
+      if (DEBUG>=2) {printf("Real new position: %.3f - Real new velocity: %.3f\n",positions[ptm],trueDirections[ptm]);}
 
       /* Save the direction of the particle: swimming and resulting (if Tint) */
       if ((step+1)%Tint==0 && step>0) {
@@ -581,9 +582,16 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
     /* Save total number of clusters and system snapshot and measure the Energy of the system */
     if ((step+1)%(int)sqrt(Tint)==0 && step>0) {
       int sn;
+      if (DEBUG==3) {printf("\nComputing energy...\n");}
       E=0;							/* reset energy */
-      for (sn=0; sn<N; sn++) {E+=0.5*pow(trueDirections[sn],2)+V[sn];}
+      for (sn=0; sn<N; sn++) {
+        E+=0.5*pow(trueDirections[sn],2)+V[sn];
+        if (DEBUG==3) {
+          printf("  Particle %d - v=%.3f - V=%.3f - E=%.3f\n",sn,trueDirections[sn],V[sn],0.5*pow(trueDirections[sn],2)+V[sn]);
+        }
+      }
       E=E/(float)N;						/* compute and normalize E */
+      if (DEBUG==3) {printf("\nEnergy = %.5f\n",E); getchar();}
       fprintf(nrj, "%d	%f\n", step+1, E);			/* save E */
       fprintf(nc, "%d	%d\n", step+1, c-1);			/* # of clusters */
       if (step+1<=Tint) {
