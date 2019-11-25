@@ -294,11 +294,11 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
           float dist=abs(pos-positions[v]);
           int posneg=(pos-positions[v])/dist;
           if (dist>L/2) {dist=L-dist;}
-          V[ptm]+=(-1)*posneg*LJ(epsilon,sigma,Vrange,dist);
+          V[ptm]+=LJ(epsilon,sigma,Vrange,dist);
           Vprime[ptm]+=posneg*LJprime(epsilon,sigma,Vrange,dist);
         }
       }
-      if (DEBUG==3) {printf("F: %.10f\n",-Vprime[ptm]);}
+      if (DEBUG==3) {printf("F: %.10f\n",-Vprime[ptm]); printf("V: %.10f\n",V[ptm]);}
 
       /* GAUSSIAN WHITE NOISE */
       float U1=rand()/(float)RAND_MAX;			/* Uniformly distributed RV */
@@ -336,10 +336,10 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
         float dist=npos-positions[v];
         if (dist<0) {dist=-dist;}			/* Absolute value */
         if (dist>L/2) {dist=L-dist;}			/* PBCs */
-        if (dist<sigma) {allowed=0;}
+        if (dist<sigma) {allowed=0; break;}
         if (DEBUG==3) {printf("  Distance to particle %d: %.3f - allowed: %d\n",v+1,dist,allowed);}
       }
-      if (allowed==1) {positions[ptm]=npos; trueDirections[ptm]=npos-pos;}
+      if (allowed==1) {positions[ptm]=npos;}
       else {trueDirections[ptm]=0;}
       if (DEBUG>=2) {printf("Real new position: %.3f - Real new velocity: %.3f\n",positions[ptm],trueDirections[ptm]);}
 
@@ -585,7 +585,7 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
       if (DEBUG==3) {printf("\nComputing energy...\n");}
       E=0;							/* reset energy */
       for (sn=0; sn<N; sn++) {
-        E+=0.5*pow(trueDirections[sn],2)+V[sn];
+        E+=0.5*pow(trueDirections[sn],2)+0.5*V[sn];
         if (DEBUG==3) {
           printf("  Particle %d - v=%.3f - V=%.3f - E=%.3f\n",sn,trueDirections[sn],V[sn],0.5*pow(trueDirections[sn],2)+V[sn]);
         }
