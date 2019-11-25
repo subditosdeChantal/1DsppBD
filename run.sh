@@ -8,6 +8,6 @@ cd ../analysis/
 echo ""
 echo "Launching analysis..."
 echo ""
-bash run_analysis.sh sim*mu*
+bash run_analysis.sh sim*
 cd
 
