@@ -27,7 +27,7 @@ do for [dir in dirs] {
   set xlabel "Distance" font "Helvetica,20"
   set ylabel "C(x)" font "Helvetica,20"
   set xrange [0:(L+0)/2]
-  set yrange [0:1.5]
+  set yrange [0:1]
   #set logscale y 10
   #set format y "10^{%L}"
   #set logscale x 10
