@@ -367,39 +367,81 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
     /* EVALUATE CLUSTERS */
     if (DEBUG==3) {getchar(); printf("\n\n\nEVALUATING CLUSTERS - t=%d\n\n\n",step+1);}
 
+    float R_x=L, L_x=0, o_R_x, limit_broken=0;			/* Right-boundary, left-boundary and old right-boundary positions */
+    int R_part, L_part, size=1;					/* Right-boundary particle, displacement for broken clusters and size*/
+    int broken=0;						/* Broken cluster variable */
+    int incluster=1, incluster_L=1;				/* Inside cluster variables */
     int c=1;							/* Cluster counter */
-    j=0;							/* Particle counter */
-    int broken=0;						/* Tag for broken cluster @ the boundary */
-    float limit_broken=0;					/* Limit of broken cluster @ the boundary */
-    for (i=0; i<N-1; i++) {					/* First particle loop */
-      for (j=i+1; j<N; j++) {					/* Second particle loop */
-        float dist=positions[j]-positions[i];			/* Distance */
-        if (dist<0) {dist=-dist;}				/* Absolute value */
-        if (dist>L/2) {
-          dist=L-dist;						/* PBCs */
-          if (dist<cluster_cutoff) {broken=c;}			/* Two particles at the boundaries so cluster is broken */
-        }
-        if (DEBUG==3) {printf("\nParticles %d and %d - Distance: %.3f\n",i+1,j+1,dist);}
-        if (dist<cluster_cutoff) {				/* Inside same cluster */
-          if (clusters[i]==0) {
-            if (clusters[j]==0) {				/* If none of the two particles have been assigned to a cluster... */
-              clusters[i]=c;
-              clusters[j]=c;					  /* Both particles assigned to current cluster count */
-              c++;						  /* Increment cluster count */
-            }
-            else {clusters[i]=clusters[j];}			/* If particle i has no cluster but particle j does: assign cluster of j to i */
+    float prv, nxt;						/* Incluster limits */
+    for (i=0; i<N; i++) {
+      if (positions[i]<R_x) {R_x=positions[i]; R_part=i;}	/* Find most-left particle - starting right boundary */
+      if (positions[i]>L_x) {L_x=positions[i]; L_part=i;}	/* Find most-right particle - starting left boundary */
+    }
+    if (DEBUG==3) {printf("Left-most particle: %d @ position %.5f\nRight-most particle: %d @ position %.5f\n",R_part+1,R_x,L_part+1,L_x);}
+    prv=R_x-cluster_cutoff;
+    if (prv<0 && L_x>prv+L) {						/* If there most-right particle is less than cluster_cutoff away (w/ PBCs) from most-left particle... */
+      broken=c;							  /* cluster is broken */
+      clusters[R_part]=c;
+      clusters[L_part]=c;					  /* both R_part and L_part are in the cluster (1st one) */
+      size=2;							  /* size of this cluster is now 2 */
+    }
+    if (DEBUG==3) {printf("Broken? (1=yes - 0=no): %d\n",broken);}
+    if (broken==1) {						/* If first cluster is broken... */ /* Compute its size and limits to the left */
+      while (incluster_L==1) {					  /* as long as we're still in this cluster to the left... */
+        prv=L_x-cluster_cutoff;					    /* maximum distance for a particle to be in the same cluster */
+        if (DEBUG==3) {printf("    New limit for cluster inclusion: %.5f\n", prv);}
+        for (i=0; i<N; i++) {
+          incluster_L=0;					    /* by default assume it's the end of the cluster -> we exit this cluster */
+          if (positions[i]>prv && positions[i]<L_x && i!=L_part) {  /* if there is a particle to the left of the current boundary less than cluster_cutoff away... */
+            L_x=positions[i];					      /* update boundary to new particle */
+            L_part=i;
+            size++;						      /* increase size */
+            clusters[i]=c;					      /* tag cluster */
+            incluster_L=1;					      /* we're still inside the cluster! */
+            if (DEBUG==3) {printf("    Particle %d @ position %.5f -> cluster #%d of size %d\n", i+1, positions[i], c, size);}
+            break;						      /* exit the particle loop and start over with new boundary */
           }
-          else {clusters[j]=clusters[i];}			/* If particle i has a cluster assign cluster of i to j */
         }
-        if (DEBUG==3) {printf("  Cluster of particle %d: %d\n  Cluster of particle %d: %d\n",i+1,clusters[i],j+1,clusters[j]);}
-      } 
-    }
-    for (i=0; i<N; i++) {					/* Measure mass and limit of the broken cluster @ the boundary */
-      if (clusters[i]==broken) {
-        if (positions[i]<(limit_broken+cluster_cutoff)) {limit_broken=positions[i];}
+        if (DEBUG==3 && incluster==0) {printf("  End of cluster reached\n");}
       }
+      if (DEBUG==3) {printf("Left-boundary of broken cluster is particle %d @ position %.5f\n", L_part+1, L_x);}
     }
+    if (DEBUG==3) {printf("\nMeasure clusters towards the right...\n");}
+    while (R_x<L_x) {						/* While new right-boundary is to the left of the left-boundary (we haven't probed the whole system yet) */
+      while (incluster==1) {					  /* as long as we're still in this cluster */
+        float nxt=R_x+cluster_cutoff;				    /* maximum distance for a particle to be in the same cluster */
+        if (DEBUG==3) {printf("  New limit for cluster inclusion: %.5f\n", nxt);}
+        for (i=0; i<N; i++) {
+          incluster=0;						    /* by default assume it's the end of the cluster -> we exit this cluster */
+          if (positions[i]<nxt && positions[i]>R_x && i!=R_part) {  /* if there is a particle to the right of the current boundary less than cluster_cutoff away... */
+            R_x=positions[i];					      /* update boundary to new particle */
+            size++;						      /* increase size */
+            if (size==2) {clusters[R_part]=c;}			      /* tag cluster of previous boundary if this is the second particle in the cluster */
+            R_part=i;
+            clusters[i]=c;					      /* tag cluster */
+            incluster=1;					      /* we're still inside the cluster! */
+            if (DEBUG==3) {printf("    Particle %d @ position %.5f -> cluster #%d of size %d\n", i+1, positions[i], c, size);}
+            break;						      /* exit the particle loop and start over with new boundary */
+          }
+        }
+        if (DEBUG==3 && incluster==0) {printf("  End of cluster reached\n");}
+      }
+      if (c==1 && broken==1)  {limit_broken=R_x;}		  /* save the right-boundary of broken cluster */
+      if (DEBUG==3 && broken==1) {printf("Right-limit of the broken cluster: %.5f\n",limit_broken);}
+      if (size>1) {c++;}					  /* change cluster because we've reached the end */
+      size=0;
+      o_R_x=R_x;
+      R_x=L_x;							  /* reset R_x to the left-most position that is still to the right of old R_x */
+      for (i=0; i<N; i++) {					  /* Find most-left particle - new cluster right boundary */
+        if (positions[i]<R_x && positions[i]>o_R_x && i!=R_part) {
+          R_x=positions[i]; R_part=i; incluster=1; size=1;
+        }
+      }
+      if (DEBUG==3) {printf("\nNew cluster #%d starting at position %.5f with size %d\n", c, R_x, size);}
+    }
+    if ((step+1)%(int)sqrt(Tint)==0 && step>0) {fprintf(nc, "%d	%d\n", step+1, c-1);}			/* save # of clusters */
     if (DEBUG>=2) {
+      printf("\n");
       for (i=0; i<N; i++) {printf("%d ",clusters[i]);}
       printf("\n");
       printf("Number of clusters: %d\n",c-1);
@@ -593,7 +635,6 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
       E=E/(float)N;						/* compute and normalize E */
       if (DEBUG==3) {printf("\nEnergy = %.5f\n",E); getchar();}
       fprintf(nrj, "%d	%f\n", step+1, E);			/* save E */
-      fprintf(nc, "%d	%d\n", step+1, c-1);			/* # of clusters */
       if (step+1<=Tint) {
         fprintf(snap, "%d ", step+1);				/* snap initial times */
         for (sn=0; sn<N; sn++) {
