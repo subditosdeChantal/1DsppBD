@@ -1,0 +1,28 @@
+#files_select=ARG1
+
+#files = system('ls -f ../../output_1DsppBD/'.files_select)
+files = system('ls -f ../../output_1DsppBD/J_constBeta*')
+
+do for [file in files] {
+  reset
+  set pm3d map
+  set pm3d interpolate 0,0
+  set size square
+  set title "J" font "Helvetica,20"
+  set xlabel "{/Symbol a}" font "Helvetica,20"
+  set ylabel "{/Symbol f}" font "Helvetica,20"
+  set tics font "Helvetica,20"
+  set xrange [0.001:0.8]
+  set logscale x 10
+  set yrange [0.07:0.8]
+  set cbrange [0:1]
+  set key font "Helvetica,20"
+  unset key
+  set palette rgbformulae 22,13,10
+  set colorbox vertical user origin .8,.2 size .04,.6
+  print "Plotting file..."
+  splot file
+  set term png 
+  set output "../../output_1DsppBD/J_constBeta".file[33:98].".png"
+  replot
+}

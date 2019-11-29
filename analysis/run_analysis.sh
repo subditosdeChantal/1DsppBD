@@ -31,4 +31,10 @@ gnuplot -c plot_snapshot_beg $1
 gnuplot -c plot_snapshot_ss $1
 
 echo ""
+echo "Computing order parameters"
+python3 J_M.py $1
+echo "Plotting order parameters"
+bash plot_OP.sh
+
+echo ""
 echo "Done!"
