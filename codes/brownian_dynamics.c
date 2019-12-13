@@ -291,7 +291,7 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
       if (epsilon!=0) {
         for (v=0; v<N; v++) {
           if (v==ptm) {continue;}
-          float dist=abs(pos-positions[v]);
+          float dist=fabsf(pos-positions[v]);   // Cambiado abs() por fabsf() ya que abs(-0.999)=0.
           int posneg=(pos-positions[v])/dist;
           if (dist>L/2) {dist=L-dist;}
           V[ptm]+=LJ(epsilon,sigma,Vrange,dist);
@@ -333,8 +333,8 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
       int allowed=1;
       for (v=0; v<N; v++) {
         if (v==ptm) {continue;}
-        float dist=npos-positions[v];
-        if (dist<0) {dist=-dist;}			/* Absolute value */
+        float dist=fabsf(npos-positions[v]);
+        // if (dist<0) {dist=-dist;}			/* Absolute value (lo he puesto en la linea de arriba). */
         if (dist>L/2) {dist=L-dist;}			/* PBCs */
         if (dist<sigma) {allowed=0; break;}
         if (DEBUG==3) {printf("  Distance to particle %d: %.3f - allowed: %d\n",v+1,dist,allowed);}
@@ -483,7 +483,7 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
         if (clRB>=L) {clRB-=L;}					/* PBCs */
         LBclusters[i-1]=clLB;					/* Save the boundaries of the cluster */
         RBclusters[i-1]=clRB;
-        clusterprob=abs(dir)/(float)size;			/* Define the jumping probability for the cluster */
+        clusterprob=fabsf(dir)/(float)size;			/* Define the jumping probability for the cluster (cambiado abs() por fabsf())*/
         int rclust=rand();
         if (DEBUG>=2) {
           printf("\nPosition: %.3f-%.3f\nSize: %d\nDirection: %d\nProbability: %.3f\nRandom number: %.3f\n",clLB,clRB,size,dir,clusterprob,rclust/(float)RAND_MAX);
@@ -498,8 +498,8 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
             if (DEBUG==3) {printf("Right-moving cluster. New limit if jump: %.3f\n",nclRB);}
             for (p=0; p<N; p++) {				/* Check movement of cluster is allowed */
               if (clusters[p]==i) {continue;}
-              float dd=positions[p]-nclRB;			/* Distance to other particles */
-              if (dd<0) {dd=-dd;}				/* Absolute value */
+              float dd=fabsf(positions[p]-nclRB);			/* Distance to other particles */
+              // if (dd<0) {dd=-dd;}				/* Absolute value (lo he puesto en la linea de arriba)*/
               if (dd>L/2) {dd=L-dd;}				/* PBCs */
               if (dd<sigma) {
                 allowed=0;
@@ -522,8 +522,8 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
             if (DEBUG==3) {printf("Left-moving cluster. New limit if jump: %.3f\n",pclLB);}
             for (p=0; p<N; p++) {				/* Check movement of cluster is allowed */
               if (clusters[p]==i) {continue;}
-              float dd=positions[p]-pclLB;			/* Distance to other particles */
-              if (dd<0) {dd=-dd;}				/* Absolute value */
+              float dd=fabsf(positions[p]-pclLB);			/* Distance to other particles */
+              // if (dd<0) {dd=-dd;}				/* Absolute value (lo he puesto en la linea de arriba)*/
               if (dd>L/2) {dd=L-dd;}				/* PBCs */
               if (dd<sigma) {
                 allowed=0;
