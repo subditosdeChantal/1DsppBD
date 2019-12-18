@@ -95,7 +95,6 @@ for i in range(len(beta)):
   beta[i]=min(be[be>max(beta)])
 
 print("Fp=%.2f\neps=%.5f\n"%(v,eps))
-input()
 
 print("\n\nConstant beta\n")
 
