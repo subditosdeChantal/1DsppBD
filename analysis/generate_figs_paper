@@ -1,0 +1,151 @@
+##CLUSTER SIZE DISTRIBUTION
+
+array V[2]=[0.00000,0.04167]
+array Fp[2]=[0.0,1.0]
+array D[2]=[0.0,1.0]
+array F[2]=[0.8,0.1]
+array A[2]=[0.100,0.001]
+
+do for [iv=1:2] {
+  v=V[iv]
+  do for [ifp=1:2] {
+    fp=Fp[ifp]
+    do for [id=1:2] {
+      d=D[id]
+      output_file = sprintf('../../paper_figures_1DsppBD/CSD_D%.3f_Fp%.2f_eps%.5f.png',d,fp,v)
+      reset
+      set term png #size 1280,1280
+      set style line 1 lc rgb 'black' pt 13   # filled diamond
+      set style line 2 lc rgb 'blue' pt 13
+      set style line 3 lc rgb 'red' pt 13
+      set style line 4 lc rgb 'green' pt 13
+      set output output_file
+      set xlabel 'Size' font 'Helvetica,20'
+      set ylabel 'P(l)' font 'Helvetica,20'
+      set logscale y 10
+      set format y '10^{%L}'
+      set xrange[0:1]
+      set yrange[0.00001:1]
+      set tics font 'Helvetica,20'
+      set key font 'Helvetica,20'
+      set key right top Left
+      unset key
+      file1 = sprintf('../../output_1DsppBD/sim_a%.3f_f%.3f_t0010000000_L00500_D%.3f_Fp%.2f_eps%.5f_CMOB1_IS0_tint10000/sizedistr_norm.dat',A[1],F[1],d,fp,v)
+      file2 = sprintf('../../output_1DsppBD/sim_a%.3f_f%.3f_t0010000000_L00500_D%.3f_Fp%.2f_eps%.5f_CMOB1_IS0_tint10000/sizedistr_norm.dat',A[2],F[1],d,fp,v)
+      file3 = sprintf('../../output_1DsppBD/sim_a%.3f_f%.3f_t0010000000_L00500_D%.3f_Fp%.2f_eps%.5f_CMOB1_IS0_tint10000/sizedistr_norm.dat',A[1],F[2],d,fp,v)
+      file4 = sprintf('../../output_1DsppBD/sim_a%.3f_f%.3f_t0010000000_L00500_D%.3f_Fp%.2f_eps%.5f_CMOB1_IS0_tint10000/sizedistr_norm.dat',A[2],F[2],d,fp,v)
+      plot file1 with points ls 1 pointsize 2 title sprintf('{/Symbol f}=%.1f {/Symbol a}=%.3f',F[1],A[1]), \
+           file2 with points ls 2 pointsize 2 title sprintf('{/Symbol f}=%.1f {/Symbol a}=%.3f',F[1],A[2]), \
+           file3 with points ls 3 pointsize 2 title sprintf('{/Symbol f}=%.1f {/Symbol a}=%.3f',F[2],A[1]), \
+           file4 with points ls 4 pointsize 2 title sprintf('{/Symbol f}=%.1f {/Symbol a}=%.3f',F[2],A[2])
+    }
+  }
+}
+
+do for [iv=1:2] {
+  v=V[iv]
+  do for [ifp=1:2] {
+    fp=Fp[ifp]
+    do for [id=1:2] {
+      d=D[id]
+      output_file = sprintf('../../paper_figures_1DsppBD/SC_D%.3f_Fp%.2f_eps%.5f.png',d,fp,v)
+      reset
+      set term png #size 1280,1280
+      set style line 1 lc rgb 'black'
+      set style line 2 lc rgb 'blue'
+      set style line 3 lc rgb 'red'
+      set style line 4 lc rgb 'green'
+      set output output_file
+      set xlabel 'x' font 'Helvetica,20'
+      set ylabel 'C(x)' font 'Helvetica,20'
+      set xrange[0:250]
+      set yrange[0:1]
+      set tics font 'Helvetica,20'
+      set key font 'Helvetica,20'
+      set key right top Left
+      unset key
+      file1 = sprintf('../../output_1DsppBD/sim_a%.3f_f%.3f_t0010000000_L00500_D%.3f_Fp%.2f_eps%.5f_CMOB1_IS0_tint10000/avg_corr.dat',A[1],F[1],d,fp,v)
+      file2 = sprintf('../../output_1DsppBD/sim_a%.3f_f%.3f_t0010000000_L00500_D%.3f_Fp%.2f_eps%.5f_CMOB1_IS0_tint10000/avg_corr.dat',A[2],F[1],d,fp,v)
+      file3 = sprintf('../../output_1DsppBD/sim_a%.3f_f%.3f_t0010000000_L00500_D%.3f_Fp%.2f_eps%.5f_CMOB1_IS0_tint10000/avg_corr.dat',A[1],F[2],d,fp,v)
+      file4 = sprintf('../../output_1DsppBD/sim_a%.3f_f%.3f_t0010000000_L00500_D%.3f_Fp%.2f_eps%.5f_CMOB1_IS0_tint10000/avg_corr.dat',A[2],F[2],d,fp,v)
+      plot file1 with lines ls 1 linewidth 3 title sprintf('{/Symbol f}=%.1f {/Symbol a}=%.3f',F[1],A[1]), \
+           file2 with lines ls 2 linewidth 3 title sprintf('{/Symbol f}=%.1f {/Symbol a}=%.3f',F[1],A[2]), \
+           file3 with lines ls 3 linewidth 3 title sprintf('{/Symbol f}=%.1f {/Symbol a}=%.3f',F[2],A[1]), \
+           file4 with lines ls 4 linewidth 3 title sprintf('{/Symbol f}=%.1f {/Symbol a}=%.3f',F[2],A[2])
+    }
+  }
+}
+
+do for [iv=1:2] {
+  v=V[iv]
+  do for [ifp=1:2] {
+    fp=Fp[ifp]
+    do for [id=1:2] {
+      d=D[id]
+      output_file = sprintf('../../paper_figures_1DsppBD/SC_zoomshort_D%.3f_Fp%.2f_eps%.5f.png',d,fp,v)
+      reset
+      set term png #size 1280,1280
+      set style line 1 lc rgb 'black'
+      set style line 2 lc rgb 'blue'
+      set style line 3 lc rgb 'red'
+      set style line 4 lc rgb 'green'
+      set output output_file
+      set xlabel 'x' font 'Helvetica,20'
+      set ylabel 'C(x)' font 'Helvetica,20'
+      set xrange[0:10]
+      set xtics 0,1,10
+      set yrange[0:1]
+      set tics font 'Helvetica,20'
+      set key font 'Helvetica,20'
+      set key right top Left
+      unset key
+      set grid
+      file1 = sprintf('../../output_1DsppBD/sim_a%.3f_f%.3f_t0010000000_L00500_D%.3f_Fp%.2f_eps%.5f_CMOB1_IS0_tint10000/avg_corr.dat',A[1],F[1],d,fp,v)
+      file2 = sprintf('../../output_1DsppBD/sim_a%.3f_f%.3f_t0010000000_L00500_D%.3f_Fp%.2f_eps%.5f_CMOB1_IS0_tint10000/avg_corr.dat',A[2],F[1],d,fp,v)
+      file3 = sprintf('../../output_1DsppBD/sim_a%.3f_f%.3f_t0010000000_L00500_D%.3f_Fp%.2f_eps%.5f_CMOB1_IS0_tint10000/avg_corr.dat',A[1],F[2],d,fp,v)
+      file4 = sprintf('../../output_1DsppBD/sim_a%.3f_f%.3f_t0010000000_L00500_D%.3f_Fp%.2f_eps%.5f_CMOB1_IS0_tint10000/avg_corr.dat',A[2],F[2],d,fp,v)
+      plot file1 with lines ls 1 linewidth 3 title sprintf('{/Symbol f}=%.1f {/Symbol a}=%.3f',F[1],A[1]), \
+           file2 with lines ls 2 linewidth 3 title sprintf('{/Symbol f}=%.1f {/Symbol a}=%.3f',F[1],A[2]), \
+           file3 with lines ls 3 linewidth 3 title sprintf('{/Symbol f}=%.1f {/Symbol a}=%.3f',F[2],A[1]), \
+           file4 with lines ls 4 linewidth 3 title sprintf('{/Symbol f}=%.1f {/Symbol a}=%.3f',F[2],A[2])
+    }
+  }
+}
+
+do for [iv=1:2] {
+  v=V[iv]
+  do for [ifp=1:2] {
+    fp=Fp[ifp]
+    do for [id=1:2] {
+      d=D[id]
+      output_file = sprintf('../../paper_figures_1DsppBD/NC_D%.3f_Fp%.2f_eps%.5f.png',d,fp,v)
+      reset
+      set term png #size 1280,1280
+      set style line 1 lc rgb 'black' pt 13   # filled diamond
+      set style line 2 lc rgb 'blue' pt 13
+      set style line 3 lc rgb 'red' pt 13
+      set style line 4 lc rgb 'green' pt 13
+      set output output_file
+      set xlabel 'Time' font 'Helvetica,20'
+      set ylabel 'N_c' font 'Helvetica,20'
+      set logscale y 10
+      set format y '10^{%L}'
+      set logscale x 10
+      set format x '10^{%L}'
+      set xrange[100:10000000]
+      set yrange[1:250]
+      set tics font 'Helvetica,20'
+      set key font 'Helvetica,20'
+      set key left bottom Left
+      unset key
+      file1 = sprintf('../../output_1DsppBD/sim_a%.3f_f%.3f_t0010000000_L00500_D%.3f_Fp%.2f_eps%.5f_CMOB1_IS0_tint10000/nclusters.dat',A[1],F[1],d,fp,v)
+      file2 = sprintf('../../output_1DsppBD/sim_a%.3f_f%.3f_t0010000000_L00500_D%.3f_Fp%.2f_eps%.5f_CMOB1_IS0_tint10000/nclusters.dat',A[2],F[1],d,fp,v)
+      file3 = sprintf('../../output_1DsppBD/sim_a%.3f_f%.3f_t0010000000_L00500_D%.3f_Fp%.2f_eps%.5f_CMOB1_IS0_tint10000/nclusters.dat',A[1],F[2],d,fp,v)
+      file4 = sprintf('../../output_1DsppBD/sim_a%.3f_f%.3f_t0010000000_L00500_D%.3f_Fp%.2f_eps%.5f_CMOB1_IS0_tint10000/nclusters.dat',A[2],F[2],d,fp,v)
+      plot file1 with points ls 1 pointsize 2 title sprintf('{/Symbol f}=%.1f {/Symbol a}=%.3f',F[1],A[1]), \
+           file2 with points ls 2 pointsize 2 title sprintf('{/Symbol f}=%.1f {/Symbol a}=%.3f',F[1],A[2]), \
+           file3 with points ls 3 pointsize 2 title sprintf('{/Symbol f}=%.1f {/Symbol a}=%.3f',F[2],A[1]), \
+           file4 with points ls 4 pointsize 2 title sprintf('{/Symbol f}=%.1f {/Symbol a}=%.3f',F[2],A[2])
+    }
+  }
+}

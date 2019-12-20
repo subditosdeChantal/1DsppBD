@@ -37,4 +37,10 @@ echo "Plotting order parameters"
 bash plot_OP.sh
 
 echo ""
+echo "Plotting paper figures"
+rm -r ../../paper_figures_1DsppBD/
+mkdir ../../paper_figures_1DsppBD/
+gnuplot generate_figs_paper
+
+echo ""
 echo "Done!"
