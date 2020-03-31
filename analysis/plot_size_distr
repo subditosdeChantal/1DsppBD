@@ -5,6 +5,8 @@ dirs_select=ARG1
 
 dirs = system('ls -d ../../output_1DsppBD/'.dirs_select)
 
+print dirs
+
 do for [dir in dirs] {
   file = dir."/sizedistr.dat"
   exists=system('if (test -e '.file.'); then echo 1; else echo 0; fi')

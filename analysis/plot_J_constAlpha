@@ -1,4 +1,4 @@
-files = system('ls -f ../../output_1DsppBD/J_constAlpha*')
+files = system('ls -f ../../output_1DsppBD/J_constAlpha*.dat')
 
 do for [file in files] {
   reset
@@ -9,9 +9,9 @@ do for [file in files] {
   set xlabel "{/Symbol f}" font "Helvetica,20"
   set ylabel "{/Symbol b}" font "Helvetica,20"
   set tics font "Helvetica,20"
-  set xrange [0.1:0.8]
+  set xrange [0.2:0.8]
   set logscale y 10
-  set yrange [1:100000]
+  set yrange [1:10000]
   set cbrange [0:1]
   set key font "Helvetica,20"
   unset key
@@ -20,6 +20,6 @@ do for [file in files] {
   print "Plotting file..."
   splot file
   set term png 
-  set output "../../output_1DsppBD/J_constAlpha".file[33:98].".png"
+  set output "../../output_1DsppBD/J_constAlpha".file[34:99].".png"
   replot
 }

@@ -23,11 +23,12 @@ for dir_name in dirs:
   N=L*phi
   D=float(dir_name[60:64])
   beta=float(pd.read_csv("%s/parameters.dat"%(dir_name),engine='python',sep=": ",header=None,names=["Par","Value"])["Value"][11])
-  v=float(dir_name[68:71])
+  v=float(pd.read_csv("%s/parameters.dat"%(dir_name),engine='python',sep=": ",header=None,names=["Par","Value"])["Value"][10])
+  ##v=float(dir_name[68:71])
   eps=float(dir_name[76:82])
   CMOB=int(dir_name[87])
   IS=int(dir_name[91])
-  Tint=int(dir_name[97:101])
+  Tint=int(dir_name[97:102])
   file_sizes="%s/sizedistr.dat"%(dir_name)
   file_nclust="%s/nclusters.dat"%(dir_name)
   if not (os.path.isfile(file_sizes)):
@@ -92,6 +93,8 @@ beta=np.array(beta)
 beta=beta-beta
 for i in range(len(beta)):
   beta[i]=min(be[be>max(beta)])
+
+print("Fp=%.2f\neps=%.5f\n"%(v,eps))
 
 print("\n\nConstant beta\n")
 
