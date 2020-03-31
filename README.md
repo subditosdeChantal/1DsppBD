@@ -17,3 +17,5 @@
 **RESULT ANALYSIS AND FIGURE CREATION**: Once you have completed all the simulations you wished, you can just type __bash run_analysis.sh__ in __~/1DsppBD/analysis/__ to process the data of all your simulations. This will create figures for a number of relevant variables of the system for each simulation in their respective output directories.
 
 **LAUNCH WHOLE THING TOGETHER**: You can also set up a simulation loop with __~/1DsppBD/codes/input.dat__ and then run both the simulation and the later analysis codes with a single bash script by typing __bash run.sh__ in __~/1DsppBD/__.
+
+**PARALLEL**: In /codes/parallel there is a modification of the root code brownian_dynamics.c called para_brownian_dynamics.c which uses the gnu-parallel program to enable easy simultaneous launching of many simulations (each one of them in a different thread)  with different parameters. Instructions on how to use it are in the folder /parallel.
