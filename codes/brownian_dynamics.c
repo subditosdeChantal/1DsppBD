@@ -541,7 +541,7 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
             if (allowed==1) {					/* ...and movement is allowed */
               for (p=0; p<N; p++) {
                 if (clusters[p]==i) {				  /* Move cluster particles down */
-                  positions[p]=positions[p]-1;
+                  positions[p]=positions[p]-Fp*dt;
                   if (positions[p]<0) {positions[p]=positions[p]+L;}/* PBCs */
                 }
               }
