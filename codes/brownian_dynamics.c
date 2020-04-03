@@ -681,7 +681,7 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
       char message[96];
       sprintf(message,"%.2f %% elapsed after %d hours %d minutes and %.2f seconds",(step+1)/(double)Tmax*100,hours_taken,minutes_taken,seconds_taken);
       if (step==0) {
-        printf("\nL=%d phi=%.3f alpha=%.3f epsilon=%.5f v=%.1f beta=%.3f D=%.3f CMOB=%d IS=%d\n",L,fi,alpha,epsilon,Fp,beta,Dt,CMOB,INIT_STATE);
+        printf("\nL=%d phi=%.3f alpha=%.3f epsilon=%.5f v=%.1f beta=%.3f D=%.3f CMOB=%d IS=%d dt=%.5f\n",L,fi,alpha,epsilon,Fp,beta,Dt,CMOB,INIT_STATE,dt);
         printf("%s",message);
       }
       else if (step<Tmax-1) {
