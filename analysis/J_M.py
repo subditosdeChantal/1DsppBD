@@ -13,11 +13,11 @@ dirs = glob.glob('../../output_1DsppBD/%s'%(sys.argv[1]))
 OP=pd.DataFrame(data=np.zeros((len(dirs),5)));
 i=0
 
-##../../output_1DsppBD/sim_a0.001_f0.800_t0010000000_L00500_D1.000_Fp0.00_eps0.04167_CMOB1_IS0_tint10000
+##../../output_1DsppBD/sim_a0.001_f0.800_t0010000000_L00500_D1.000_Fp0.00_eps0.04167_CMOB1_IS0_tint10000_dt0.00001
 
 for dir_name in dirs:
-  alpha=float(dir_name[27:31])
-  phi=float(dir_name[34:38])
+  alpha=float(dir_name[27:32])
+  phi=float(dir_name[34:39])
   T=int(dir_name[41:50])
   L=int(dir_name[53:57])
   N=L*phi
@@ -29,6 +29,7 @@ for dir_name in dirs:
   CMOB=int(dir_name[87])
   IS=int(dir_name[91])
   Tint=int(dir_name[97:102])
+  dt=float(dir_name[105:112])
   file_sizes="%s/sizedistr.dat"%(dir_name)
   file_nclust="%s/nclusters.dat"%(dir_name)
   if not (os.path.isfile(file_sizes)):
@@ -38,7 +39,7 @@ for dir_name in dirs:
     print("File doesn't exist") 
     continue
   if i==0:
-    output="../../output_1DsppBD/OP_t%.10d_L%.5d_Fp%.2f_eps%.5f_CMOB%d_IS%d_tint%.5d.dat"%(T,L,v,eps,CMOB,IS,Tint)
+    output="../../output_1DsppBD/OP_t%.10d_L%.5d_Fp%.2f_eps%.5f_CMOB%d_IS%d_tint%.5d_dt%.5f.dat"%(T,L,v,eps,CMOB,IS,Tint,dt)
   print("Computing order parameters...")
   d_size=pd.read_csv(file_sizes,sep="\t",header=None,names=["l","p"])
   d_clust=pd.read_csv(file_nclust,sep="\t",header=None,index_col=0)
@@ -100,8 +101,8 @@ print("\n\nConstant beta\n")
 
 #CONSTANT BETA:
 for b in beta:
-  output_J=open("../../output_1DsppBD/J_constBeta_D%.5f_t%.10d_L%.5d_Fp%.2f_eps%.5f_CMOB%d_IS%d_tint%.5d.dat"%(1/b,T,L,v,eps,CMOB,IS,Tint), "w")
-  output_M=open("../../output_1DsppBD/M_constBeta_D%.5f_t%.10d_L%.5d_Fp%.2f_eps%.5f_CMOB%d_IS%d_tint%.5d.dat"%(1/b,T,L,v,eps,CMOB,IS,Tint), "w")
+  output_J=open("../../output_1DsppBD/J_constBeta_D%.5f_t%.10d_L%.5d_Fp%.2f_eps%.5f_CMOB%d_IS%d_tint%.5d%_dt.5f.dat"%(1/b,T,L,v,eps,CMOB,IS,Tint,dt), "w")
+  output_M=open("../../output_1DsppBD/M_constBeta_D%.5f_t%.10d_L%.5d_Fp%.2f_eps%.5f_CMOB%d_IS%d_tint%.5d_dt%.5f.dat"%(1/b,T,L,v,eps,CMOB,IS,Tint,dt), "w")
   for a in alpha:
     print("Tumbling rate: %f"%(a))
     if any(OP[OP[2]==b][0]==a):
@@ -130,8 +131,8 @@ print("\n\nConstant alpha\n")
 
 #CONSTANT ALPHA:
 for a in alpha:
-  output_J=open("../../output_1DsppBD/J_constAlpha_a%.5f_t%.10d_L%.5d_Fp%.2f_eps%.5f_CMOB%d_IS%d_tint%.5d.dat"%(a,T,L,v,eps,CMOB,IS,Tint), "w")
-  output_M=open("../../output_1DsppBD/M_constAlpha_a%.5f_t%.10d_L%.5d_Fp%.2f_eps%.5f_CMOB%d_IS%d_tint%.5d.dat"%(a,T,L,v,eps,CMOB,IS,Tint), "w")
+  output_J=open("../../output_1DsppBD/J_constAlpha_a%.5f_t%.10d_L%.5d_Fp%.2f_eps%.5f_CMOB%d_IS%d_tint%.5d_dt%.5f.dat"%(a,T,L,v,eps,CMOB,IS,Tint,dt), "w")
+  output_M=open("../../output_1DsppBD/M_constAlpha_a%.5f_t%.10d_L%.5d_Fp%.2f_eps%.5f_CMOB%d_IS%d_tint%.5d_dt%.5f.dat"%(a,T,L,v,eps,CMOB,IS,Tint,dt), "w")
   for f in phi:
     if any(OP[OP[0]==a][1]==f):
       for b in beta:
@@ -154,8 +155,8 @@ print("\n\nConstant phi\n")
 
 #CONSTANT PHI:
 for f in phi:
-  output_J=open("../../output_1DsppBD/J_constPhi_f%.5f_t%.10d_L%.5d_Fp%.2f_eps%.5f_CMOB%d_IS%d_tint%.5d.dat"%(f,T,L,v,eps,CMOB,IS,Tint), "w")
-  output_M=open("../../output_1DsppBD/M_constPhi_f%.5f_t%.10d_L%.5d_Fp%.2f_eps%.5f_CMOB%d_IS%d_tint%.5d.dat"%(f,T,L,v,eps,CMOB,IS,Tint), "w")
+  output_J=open("../../output_1DsppBD/J_constPhi_f%.5f_t%.10d_L%.5d_Fp%.2f_eps%.5f_CMOB%d_IS%d_tint%.5d_dt%.5f.dat"%(f,T,L,v,eps,CMOB,IS,Tint,dt), "w")
+  output_M=open("../../output_1DsppBD/M_constPhi_f%.5f_t%.10d_L%.5d_Fp%.2f_eps%.5f_CMOB%d_IS%d_tint%.5d_dt%.5f.dat"%(f,T,L,v,eps,CMOB,IS,Tint,dt), "w")
   for a in alpha:
     if any(OP[OP[1]==f][0]==a):
       for b in beta:

@@ -47,6 +47,7 @@ void main(int argc, char **argv){
   int INIT_STATE;					/* Initial state of the system selector: 0=random 1=coarsened 2=gas */
   float cluster_cutoff;					/* Cutoff distance for considering particles belong to same cluster */
   int ierr;						/* Return value of fscanf */
+  float dt;           /* Time step */ 
 
   /* READ PARAMETERS */
   FILE *pars;
@@ -66,6 +67,7 @@ void main(int argc, char **argv){
   ierr=fscanf(pars, "%d - %d - %d\n", & CMOB_0, & CMOB_int, & CMOB_end);
   ierr=fscanf(pars, "%f\n", & cluster_cutoff);
   ierr=fscanf(pars, "%d\n", & INIT_STATE);
+  ierr=fscanf(pars, "%d\n", & dt);
   fclose(pars);
 
 alpha=alpha_0;
@@ -115,7 +117,7 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
     //int status = system("mv ");
   }
   char newdir[192];									/* Directory for the new simulation */
-  sprintf(newdir, "%s/sim_a%.3f_f%.3f_t%.10d_L%.5d_D%.3f_Fp%.2f_eps%.5f_CMOB%d_IS%d_tint%.5d", output_dir, alpha, fi, Tmax, L, Dt, Fp, epsilon, CMOB, INIT_STATE,Tint);	
+  sprintf(newdir, "%s/sim_a%.3f_f%.3f_t%.10d_L%.5d_D%.3f_Fp%.2f_eps%.5f_CMOB%d_IS%d_tint%.5d_dt%.5f", output_dir, alpha, fi, Tmax, L, Dt, Fp, epsilon, CMOB, INIT_STATE,Tint,dt);	
   struct stat st_bis = {0};
   if (stat(newdir, &st_bis) == -1) {
     mkdir(newdir, 0777);
@@ -175,6 +177,7 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
   fprintf(pars, "Mobility of the clusters: %d\n", CMOB);
   fprintf(pars, "Cluster cutoff distance: %f\n", cluster_cutoff);
   fprintf(pars, "Initial state of the system: %d (0 = random - 1 = gas - 2 = coarsened)\n", INIT_STATE);
+  fprintf(pars, "Time step: %f\n", dt);
   fclose(pars);
 
   if (DEBUG>0) {
@@ -315,7 +318,8 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
       /* NEW POSITION */
       float npos;					/* New position */
       int vel=directions[ptm];				/* Velocity of the particle: 1 site/time-step in the direction */
-      npos=pos+beta*Dt*(Fp*vel-Vprime[ptm])+sqrt(2*Dt)*eta;
+      /*npos=pos+beta*Dt*(Fp*vel-Vprime[ptm])+sqrt(2*Dt)*eta;*/
+      npos=pos+beta*Dt*dt*(Fp*vel-Vprime[ptm])+sqrt(2*Dt*dt)*eta;
       if (DEBUG>=2) {
         printf("Old position: %.3f\n",pos);
         printf("Velocity: %d\n",vel);
@@ -447,7 +451,7 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
       printf("Number of clusters: %d\n",c-1);
     }
 
-    if (CMOB==1 && Fp!=0) {						/* If moving clusters are chosen do collective dynamics */
+    if (CMOB==1) {						/* If moving clusters are chosen do collective dynamics */
 
       /* CHANGE POSITION OF CLUSTERS */
       if (DEBUG==3) {getchar(); printf("\n\n\nCOLLECTIVE DYNAMICS - t=%d\n\n\n",step+1);}
@@ -512,7 +516,8 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
             if (allowed==1) {					/* ...and movement is allowed */
               for (p=0; p<N; p++) {
                 if (clusters[p]==i) {				  /* Move cluster particles up */
-                  positions[p]=positions[p]+1;
+                  /*positions[p]=positions[p]+1;*/
+                  positions[p]=positions[p]+Fp*dt;
                   if (positions[p]>=L) {positions[p]=positions[p]-L;}/* PBCs */
                 }
               }
@@ -536,7 +541,7 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
             if (allowed==1) {					/* ...and movement is allowed */
               for (p=0; p<N; p++) {
                 if (clusters[p]==i) {				  /* Move cluster particles down */
-                  positions[p]=positions[p]-1;
+                  positions[p]=positions[p]-Fp*dt;
                   if (positions[p]<0) {positions[p]=positions[p]+L;}/* PBCs */
                 }
               }
@@ -676,7 +681,7 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
       char message[96];
       sprintf(message,"%.2f %% elapsed after %d hours %d minutes and %.2f seconds",(step+1)/(double)Tmax*100,hours_taken,minutes_taken,seconds_taken);
       if (step==0) {
-        printf("\nL=%d phi=%.3f alpha=%.3f epsilon=%.5f v=%.1f beta=%.3f D=%.3f CMOB=%d IS=%d\n",L,fi,alpha,epsilon,Fp,beta,Dt,CMOB,INIT_STATE);
+        printf("\nL=%d phi=%.3f alpha=%.3f epsilon=%.5f v=%.1f beta=%.3f D=%.3f CMOB=%d IS=%d dt=%.5f\n",L,fi,alpha,epsilon,Fp,beta,Dt,CMOB,INIT_STATE,dt);
         printf("%s",message);
       }
       else if (step<Tmax-1) {

@@ -15,3 +15,4 @@
 /*13*/	/* Cluster mobility selector: 1 = motile clusters - 0 = still clusters. 3 values */		/*INT*/
 /*14*/	/* Cutoff distance for considering particles belong to same cluster */				/*FLOAT*/
 /*15*/	/* Initial state of the system selector: 0=random 1=gas 2=coarsened */				/*INT*/
+/*16*/	/* Time step */																		/*FLOAT*/
