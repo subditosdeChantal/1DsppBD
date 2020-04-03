@@ -451,7 +451,7 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
       printf("Number of clusters: %d\n",c-1);
     }
 
-    if (CMOB==1 && Fp!=0) {						/* If moving clusters are chosen do collective dynamics */
+    if (CMOB==1) {						/* If moving clusters are chosen do collective dynamics */
 
       /* CHANGE POSITION OF CLUSTERS */
       if (DEBUG==3) {getchar(); printf("\n\n\nCOLLECTIVE DYNAMICS - t=%d\n\n\n",step+1);}
