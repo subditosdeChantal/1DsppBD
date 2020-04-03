@@ -23,7 +23,7 @@ do for [dir in dirs] {
   CMOB=dir[88:88]+0
   IS=dir[92:92]+0
   Tint=dir[98:102]+0
-  dt=dir_name[105:112]+0
+  dt=dir[105:112]+0
   set title sprintf("N=%d  alpha=%.2f  D=%.2f  v=%.1f",N,alpha,D,v) font "Helvetica,20"
   set xlabel "Distance" font "Helvetica,20"
   set ylabel "C(x)" font "Helvetica,20"
