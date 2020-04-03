@@ -47,6 +47,7 @@ void main(int argc, char **argv){
   int INIT_STATE;					/* Initial state of the system selector: 0=random 1=coarsened 2=gas */
   float cluster_cutoff;					/* Cutoff distance for considering particles belong to same cluster */
   int ierr;						/* Return value of fscanf */
+  float dt;           /* Time step */ 
 
   /* READ PARAMETERS */
   FILE *pars;
@@ -66,6 +67,7 @@ void main(int argc, char **argv){
   ierr=fscanf(pars, "%d - %d - %d\n", & CMOB_0, & CMOB_int, & CMOB_end);
   ierr=fscanf(pars, "%f\n", & cluster_cutoff);
   ierr=fscanf(pars, "%d\n", & INIT_STATE);
+  ierr=fscanf(pars, "%d\n", & dt);
   fclose(pars);
 
 alpha=alpha_0;
@@ -315,7 +317,8 @@ while (epsilon<=epsilon_end) {			/* START POTENTIAL STRENGTH LOOP */
       /* NEW POSITION */
       float npos;					/* New position */
       int vel=directions[ptm];				/* Velocity of the particle: 1 site/time-step in the direction */
-      npos=pos+beta*Dt*(Fp*vel-Vprime[ptm])+sqrt(2*Dt)*eta;
+      /*npos=pos+beta*Dt*(Fp*vel-Vprime[ptm])+sqrt(2*Dt)*eta;*/
+      npos=pos+beta*Dt*dt*(Fp*vel-Vprime[ptm])+sqrt(2*Dt*dt)*eta;
       if (DEBUG>=2) {
         printf("Old position: %.3f\n",pos);
         printf("Velocity: %d\n",vel);
