@@ -8,6 +8,7 @@ execName=$scriptName"_"$sweepName
 alpha=(0.001 0.010)
 phi=(0.1 0.2)
 eps=(0 1)
+dt=(0.01 0.001 0.0001)
 
 # threads=4
 
@@ -18,7 +19,7 @@ mkdir jobs
 
 gcc -o jobs/$execName $scriptName".c" -lm
 
-idx=($(seq -w 000 719))
+idx=($(seq -w 0 $(( ${#alpha[@]}*${#phi[@]}*${#eps[@]}*${#dt[@]} - 1 )) ))
 ii=0
 
 # Generate jobs.
@@ -28,23 +29,31 @@ do
 	do
 		for k in $(seq -w 0 $(( ${#eps[@]} - 1)) )
 		do
-			jobName=$sweepName"_"${idx[${ii}]}
 
-			cp "input.dat" jobs/$jobName".input"
+                        for l in $(seq -w 0 $(( ${#dt[@]} - 1)) )
+                        do
 
-			# echo "./"$execName" < "$jobName".input" >> jobs/paralaunch.txt
+				jobName=$sweepName"_"${idx[${ii}]}
 
-			sed -i "1s/.*/Simulation name: "$sweepName"/" jobs/$jobName".input"
+				cp "input.dat" jobs/$jobName".input"
 
-			# sed -i "2s/.*/Output dir: "$outputDir"/" jobs/$jobName".input"
+				# echo "./"$execName" < "$jobName".input" >> jobs/paralaunch.txt
 
-			sed -i "5s/.*/Tumbling rate (alpha): "${alpha[${i#0}]}"/" jobs/$jobName".input"
+				sed -i "1s/.*/Simulation name: "$sweepName"/" jobs/$jobName".input"
 
-			sed -i "6s/.*/Density (phi): "${phi[${j#0}]}"/" jobs/$jobName".input"
+				# sed -i "2s/.*/Output dir: "$outputDir"/" jobs/$jobName".input"
 
-			sed -i "10s/.*/LJ pot. intensity (epsilon): "${eps[${k#0}]}"/" jobs/$jobName".input"
+				sed -i "5s/.*/Tumbling rate (alpha): "${alpha[${i#0}]}"/" jobs/$jobName".input"
+
+				sed -i "6s/.*/Density (phi): "${phi[${j#0}]}"/" jobs/$jobName".input"
+
+				sed -i "10s/.*/LJ pot. intensity (epsilon): "${eps[${k#0}]}"/" jobs/$jobName".input"
+
+                                sed -i "18s/.*/Cluster cutoff: "${dt[${l#0}]}"/" jobs/$jobName".input"
 
 			((ii++))
+
+			done
 		done
 	done
 done

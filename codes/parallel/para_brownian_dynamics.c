@@ -48,6 +48,7 @@ void main(int argc, char **argv){
   int CMOB;			/* Cluster mobility selector: 1 = motile clusters - 0 = still clusters */
   int INIT_STATE;					/* Initial state of the system selector: 0=random 1=coarsened 2=gas */
   float cluster_cutoff;					/* Cutoff distance for considering particles belong to same cluster */
+  float dt;           					/* Time step */ 
 
   /* READ PARAMETERS */
   scanf("Simulation name: %s\n", simName);
@@ -67,6 +68,7 @@ void main(int argc, char **argv){
   scanf("Cluster mobility (CMOB): %d\n", & CMOB);
   scanf("Cluster cutoff: %f\n", & cluster_cutoff);
   scanf("Initial state: %d\n", & INIT_STATE);
+  scanf("Time Step: %f\n", & dt);
 
   printf("Simulation name: %s\n", simName);
   printf("Output path: %s\n", output_dir);
@@ -85,6 +87,7 @@ void main(int argc, char **argv){
   printf("Cluster mobility (CMOB): %d\n",  CMOB);
   printf("Cluster cutoff: %f\n",  cluster_cutoff);
   printf("Initial state: %d\n",  INIT_STATE);
+  printf("Time Step: %f\n", dt);
 
 
 
@@ -120,7 +123,7 @@ void main(int argc, char **argv){
   if (stat(output_dir, & st) == -1) {mkdir(output_dir, 0777);}
 
   char newdir[192];									/* Directory for the new simulation */
-  sprintf(newdir, "%s/sim_a%.3f_f%.3f_t%.10d_L%.5d_D%.3f_Fp%.2f_eps%.5f_CMOB%d_IS%d_tint%.5d", output_dir, alpha, fi, Tmax, L, Dt, Fp, epsilon, CMOB, INIT_STATE,Tint);	
+  sprintf(newdir, "%s/sim_a%.3f_f%.3f_t%.10d_L%.5d_D%.3f_Fp%.2f_eps%.5f_CMOB%d_IS%d_tint%.5d_dt%.5f", output_dir, alpha, fi, Tmax, L, Dt, Fp, epsilon, CMOB, INIT_STATE,Tint,dt);	
   
   // If it doesn't exist, create it.
   struct stat st_bis = {0};
@@ -184,6 +187,7 @@ void main(int argc, char **argv){
   fprintf(pars, "Mobility of the clusters: %d\n", CMOB);
   fprintf(pars, "Cluster cutoff distance: %f\n", cluster_cutoff);
   fprintf(pars, "Initial state of the system: %d (0 = random - 1 = gas - 2 = coarsened)\n", INIT_STATE);
+  fprintf(pars, "Time step: %f\n", dt);
   fclose(pars);
 
   if (DEBUG>0) {
@@ -324,7 +328,7 @@ void main(int argc, char **argv){
       /* NEW POSITION */
       float npos;					/* New position */
       int vel=directions[ptm];				/* Velocity of the particle: 1 site/time-step in the direction */
-      npos=pos+beta*Dt*(Fp*vel-Vprime[ptm])+sqrt(2*Dt)*eta;
+      npos=pos+beta*Dt*dt*(Fp*vel-Vprime[ptm])+sqrt(2*Dt*dt)*eta;
       if (DEBUG>=2) {
         printf("Old position: %.3f\n",pos);
         printf("Velocity: %d\n",vel);
@@ -521,7 +525,7 @@ void main(int argc, char **argv){
             if (allowed==1) {					/* ...and movement is allowed */
               for (p=0; p<N; p++) {
                 if (clusters[p]==i) {				  /* Move cluster particles up */
-                  positions[p]=positions[p]+1;
+                  positions[p]=positions[p]+Fp*dt;
                   if (positions[p]>=L) {positions[p]=positions[p]-L;}/* PBCs */
                 }
               }
@@ -545,7 +549,7 @@ void main(int argc, char **argv){
             if (allowed==1) {					/* ...and movement is allowed */
               for (p=0; p<N; p++) {
                 if (clusters[p]==i) {				  /* Move cluster particles down */
-                  positions[p]=positions[p]-1;
+                  positions[p]=positions[p]-dt*Fp;
                   if (positions[p]<0) {positions[p]=positions[p]+L;}/* PBCs */
                 }
               }
@@ -685,7 +689,7 @@ void main(int argc, char **argv){
       char message[96];
       sprintf(message,"%.2f %% elapsed after %d hours %d minutes and %.2f seconds",(step+1)/(double)Tmax*100,hours_taken,minutes_taken,seconds_taken);
       if (step==0) {
-        printf("\nL=%d phi=%.3f alpha=%.3f epsilon=%.5f v=%.1f beta=%.3f D=%.3f CMOB=%d IS=%d\n",L,fi,alpha,epsilon,Fp,beta,Dt,CMOB,INIT_STATE);
+        printf("\nL=%d phi=%.3f alpha=%.3f epsilon=%.5f v=%.1f beta=%.3f D=%.3f CMOB=%d IS=%d dt=%.5f\n",L,fi,alpha,epsilon,Fp,beta,Dt,CMOB,INIT_STATE,dt);
         printf("%s",message);
       }
       else if (step<Tmax-1) {
