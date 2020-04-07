@@ -67,7 +67,7 @@ void main(int argc, char **argv){
   ierr=fscanf(pars, "%d - %d - %d\n", & CMOB_0, & CMOB_int, & CMOB_end);
   ierr=fscanf(pars, "%f\n", & cluster_cutoff);
   ierr=fscanf(pars, "%d\n", & INIT_STATE);
-  ierr=fscanf(pars, "%d\n", & dt);
+  ierr=fscanf(pars, "%f\n", & dt);
   fclose(pars);
 
 alpha=alpha_0;
