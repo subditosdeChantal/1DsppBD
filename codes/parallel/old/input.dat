@@ -1,0 +1,17 @@
+Simulation name:				sweepEpsFastCclust2
+Output path:					../output_1DsppBD
+Debug:						-1
+Lattice size (L):				500
+Tumbling rate (alpha):				0.1
+Density (phi):					0.1
+Simulation time (steps):			10000000
+Measuring interval:				10000
+LJ pot. range (cutoff):				2.5
+LJ pot. intensity (epsilon):			0
+LJ pot.	diameter (sigma):			1
+Propulsion force (v, Fp):			1
+Friction coeficient (mu):			1
+Temperature (beta):				1
+Cluster mobility (CMOB):			1
+Cluster cutoff:					1.5
+Initial state:					0
