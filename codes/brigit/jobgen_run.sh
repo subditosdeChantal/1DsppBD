@@ -1,7 +1,7 @@
 #!/bin/bash
 
 scriptName="BDp_02"
-sweepName="prueba"
+sweepName="L2000"
 #outputDir="output"
 execName=$scriptName"_"$sweepName
 
@@ -14,7 +14,7 @@ dt=(0.01)
 v=(1)
 beta=(1000 10)
 
-threads=14
+# threads=14
 
 rm -rf jobs
 
@@ -75,8 +75,5 @@ do
 done
 
 # Launch jobs.
-cd jobs
-
-echo $threads > procfile
-
-parallel -j procfile < paralaunch.txt
+# cd jobs
+# parallel -j $threads < paralaunch.txt
