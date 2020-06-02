@@ -31,16 +31,21 @@ gnuplot -c plot_snapshot_beg $1
 gnuplot -c plot_snapshot_ss $1
 
 echo ""
-echo "Computing order parameters"
-python3 J_M.py $1
-echo "Plotting order parameters"
-bash plot_OP.sh
+echo "Plotting cluster dynamics..."
+python3 clustdyn.py $1 clustdyn_beg.dat
+python3 clustdyn.py $1 clustdyn_ss.dat
 
-echo ""
-echo "Plotting paper figures"
-rm -r ../../paper_figures_1DsppBD/
-mkdir ../../paper_figures_1DsppBD/
-gnuplot generate_figs_paper
+# echo ""
+# echo "Computing order parameters"
+# python3 J_M.py $1
+# echo "Plotting order parameters"
+# bash plot_OP.sh
+
+# echo ""
+# echo "Plotting paper figures"
+# rm -r ../../paper_figures_1DsppBD/
+# mkdir ../../paper_figures_1DsppBD/
+# gnuplot generate_figs_paper
 
 echo ""
 echo "Done!"

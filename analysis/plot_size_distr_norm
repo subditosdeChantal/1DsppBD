@@ -1,38 +1,48 @@
 reset
-set term png #size 1280,1280
+set term png size 640,640 
+set font "helvetica,20"
 
 dirs_select=ARG1
 
 dirs = system('ls -d ../../output_1DsppBD/'.dirs_select)
 
 do for [dir in dirs] {
+  ## Define file to plot
   file = dir."/sizedistr_norm.dat"
-  exists=system('if (test -e '.file.'); then echo 1; else echo 0; fi')
+  ## Check that such file exists and isn't empty
+  exists=system("if (test -e ".file."); then echo 1; else echo 0; fi")
   if (exists=='0') {print "No file to plot"; continue;}
-  size=system('du -bsh '.file)
-  s=size[1:3]+0
-  if (s==0) {print "File is empty"; continue;}
-  print "Plotting file..."
+  size=system('du -sh '.file)[1:3]+0
+  if (size==0) {print "File is empty"; continue;}
+  print "Plotting file in ".dir
+  ## Read variables from corresponding parameters file
+  L = system("cat ".dir."/parameters.dat | sed -n '2p'")[15:]+0
+  alpha = system("cat ".dir."/parameters.dat | sed -n '3p'")[16:]+0
+  phi = system("cat ".dir."/parameters.dat | sed -n '4p'")[19:]+0
+  N = system("cat ".dir."/parameters.dat | sed -n '5p'")[22:]+0
+  Tmax = system("cat ".dir."/parameters.dat | sed -n '6p'")[24:]+0
+  meas = system("cat ".dir."/parameters.dat | sed -n '7p'")[21:]+0
+  rcut = system("cat ".dir."/parameters.dat | sed -n '8p'")[28:]+0
+  eps = system("cat ".dir."/parameters.dat | sed -n '9p'")[45:]+0
+  sigma = system("cat ".dir."/parameters.dat | sed -n '10p'")[52:]+0
+  Fp = system("cat ".dir."/parameters.dat | sed -n '11p'")[19:]+0
+  beta = system("cat ".dir."/parameters.dat | sed -n '12p'")[43:]+0
+  mu = system("cat ".dir."/parameters.dat | sed -n '13p'")[39:]+0
+  Dt = system("cat ".dir."/parameters.dat | sed -n '14p'")[28:]+0
+  CMOB = system("cat ".dir."/parameters.dat | sed -n '15p'")[27:]+0
+  clust_r = system("cat ".dir."/parameters.dat | sed -n '16p'")[26:]+0
+  init = system("cat ".dir."/parameters.dat | sed -n '17p'")[30:31]+0
+  dt = system("cat ".dir."/parameters.dat | sed -n '18p'")[12:]+0
+  snap = system("cat ".dir."/parameters.dat | sed -n '19p'")[26:]+0
+  T0 = system("cat ".dir."/parameters.dat | sed -n '20p'")[15:]+0
+  ## Plot
   set output dir."/sizedistr_norm.png"
-  alpha=dir[27:31]+0
-  phi=dir[34:38]+0
-  T=dir[41:50]+0
-  L=dir[53:57]+0
-  N=L*phi
-  D=dir[60:64]+0
-  v=dir[68:71]+0
-  eps=dir[76:82]+0
-  CMOB=dir[88:88]+0
-  IS=dir[92:92]+0
-  Tint=dir[98:102]+0
-  dt=dir[105:112]+0
-  set title sprintf("N=%d  alpha=%.2f  D=%.2f  v=%.1f",N,alpha,D,v) font "Helvetica,20"
-  set xlabel "Size" font "Helvetica,20"
-  set ylabel "P(l)" font "Helvetica,20"
+  set title sprintf("phi=%.1f alpha=%.3f D=%.4f F_p=%.1f eps=%.1f",phi,alpha,Dt,Fp,eps)
+  set xlabel "Size"
+  set ylabel "P(l)"
   set logscale y 10
   set format y "10^{%L}"
   set xrange[0:1]
-  set tics font "Helvetica,20"
   unset key
   plot file with points lc rgb 'blue' pt 9
 }

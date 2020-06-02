@@ -1,6 +1,8 @@
 reset
-set term png size 640,640 
-set font "helvetica,20"
+set term png size 1280,1280
+set palette defined ( -1 "blue", 0 "black", 1 "red" )
+unset colorbox
+set font "helvetica,30"
 
 dirs_select=ARG1
 
@@ -8,7 +10,7 @@ dirs = system('ls -d ../../output_1DsppBD/'.dirs_select)
 
 do for [dir in dirs] {
   ## Define file to plot
-  file = dir."/energy.dat"
+  file = dir."/clustdyn_beg.dat"
   ## Check that such file exists and isn't empty
   exists=system("if (test -e ".file."); then echo 1; else echo 0; fi")
   if (exists=='0') {print "No file to plot"; continue;}
@@ -22,6 +24,7 @@ do for [dir in dirs] {
   N = system("cat ".dir."/parameters.dat | sed -n '5p'")[22:]+0
   Tmax = system("cat ".dir."/parameters.dat | sed -n '6p'")[24:]+0
   meas = system("cat ".dir."/parameters.dat | sed -n '7p'")[21:]+0
+  Tint = Tmax/meas
   rcut = system("cat ".dir."/parameters.dat | sed -n '8p'")[28:]+0
   eps = system("cat ".dir."/parameters.dat | sed -n '9p'")[45:]+0
   sigma = system("cat ".dir."/parameters.dat | sed -n '10p'")[52:]+0
@@ -36,11 +39,12 @@ do for [dir in dirs] {
   snap = system("cat ".dir."/parameters.dat | sed -n '19p'")[26:]+0
   T0 = system("cat ".dir."/parameters.dat | sed -n '20p'")[15:]+0
   ## Plot
-  set output dir."/energy.png"
+  set output dir."/clustdyn_beg.png"
   set title sprintf("phi=%.1f alpha=%.3f D=%.4f F_p=%.1f eps=%.1f",phi,alpha,Dt,Fp,eps)
-  set xlabel "Time"
-  set ylabel "E"
-  set xrange[0:Tmax]
+  set xlabel "Position"
+  set ylabel "Time"
+  set xrange [0:L]
+  set yrange [0:Tint]
   unset key
-  plot file with points lc rgb 'blue' pt 9
+  plot for [i=1:N] file using 2*i:1:2*i+1 with points lc palette pt 7 ps 1
 }
