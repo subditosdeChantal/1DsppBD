@@ -44,7 +44,7 @@ do for [dir in dirs] {
   set xlabel "Position"
   set ylabel "Time"
   set xrange [0:L]
-  set yrange [Tmax-Tint:Tmax]
+  set yrange [Tmax-snap:Tmax]
   unset key
   plot for [i=1:N] file using 2*i:1:2*i+1 with points lc palette pt 7 ps 1
 }
