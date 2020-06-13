@@ -40,7 +40,7 @@ do for [dir in dirs] {
   T0 = system("cat ".dir."/parameters.dat | sed -n '20p'")[15:]+0
   ## Plot
   set output dir."/clustdyn_beg.png"
-  set title sprintf("phi=%.1f alpha=%.3f D=%.4f F_p=%.1f eps=%.1f",phi,alpha,Dt,Fp,eps)
+  set title sprintf("phi=%.1f alpha=%.6f D=%.4f F_p=%.1f eps=%.1f",phi,alpha,Dt,Fp,eps)
   set xlabel "Position"
   set ylabel "Time"
   set xrange [0:L]

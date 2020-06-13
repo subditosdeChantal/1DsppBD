@@ -41,7 +41,7 @@ do for [dir in dirs] {
   snap = system("cat ".dir."/parameters.dat | sed -n '19p'")[26:]+0
   T0 = system("cat ".dir."/parameters.dat | sed -n '20p'")[15:]+0
   ## Plot
-  set title sprintf("phi=%.1f alpha=%.3f D=%.4f F_p=%.1f eps=%.1f",phi,alpha,Dt,Fp,eps)
+  set title sprintf("phi=%.1f alpha=%.6f D=%.4f F_p=%.1f eps=%.1f",phi,alpha,Dt,Fp,eps)
   set xrange [-1:1]
   set yrange [0:1]
   set xlabel "Direction"
