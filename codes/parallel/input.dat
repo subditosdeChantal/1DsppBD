@@ -1,19 +1,19 @@
-Simulation name: prueba
-Output path: ../output_1DsppBD
-Debug: 0
-Lattice size (L): 2000
-Tumbling rate (alpha): 0.1
-Density (phi): 0.5
-Simulation time (time units): 1000000
+Simulation name: lohialphas
+Output path: ../../output_1DsppBD
+Debug: -1
+Number of particles (N): 100
+Tumbling rate (alpha): 0.010
+Density (phi): 0.8
+Simulation time (time units): 100
 Number of measures: 1000
 LJ pot. range (cutoff): 2.5
 LJ pot. intensity (epsilon): 24
 LJ pot.	diameter (sigma): 1
 Propulsion force (v, Fp): 1
 Friction coeficient (mu): 1
-Temperature (beta): 1000
+Temperature (beta): 10000
 Cluster mobility (CMOB): 0
 Cluster cutoff:	1.5
 Initial state: 3
 Time Step: 0.01
-Snap measuring interval: 10000
+Snap measuring interval: 10

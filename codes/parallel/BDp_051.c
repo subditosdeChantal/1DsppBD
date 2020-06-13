@@ -1,4 +1,5 @@
 /* BROWNIAN DYNAMICS OF SELF-PROPELLED PARTICLES IN A ONE-DIMENSIONAL OFF-LATTICE SYSTEM */
+/* Solved saving cluserts duplicately (in clustarr) Changed visited in cluster evaluation: visited[particlesOrder[auxL]] to visited[particlesOrder[auxL]]. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,6 +10,7 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <signal.h>
+#include <string.h>
 
 #define MOD(a,b) ((((a)%(b))+(b))%(b))
 
@@ -53,11 +55,12 @@ int main(int argc, char **argv){
 
 	char simName[100];    // Name of the simulation.
 	char output_dir[192];                 /* Output directory */
-	int L;						/* Lattice size */
+	float L;						/* Lattice size */
 	float alpha;		/* Tumbling rate: initial value, interval, final value */
 	float fi;			/* Density: initial value, interval, final value */
 	int N;						/* # of particles */
 	float Tmax;						/* Total simulation time */
+	float T0 = 0;						/* Total simulation time */
 	float Tint;						/* Snapshot measurement interval */
 	float Vrange;						/* Range of the LJ potential */
 	float epsilon;	/* LJ potential intensity parameter */
@@ -77,7 +80,7 @@ int main(int argc, char **argv){
 	scanf("Simulation name: %s\n", simName);
 	scanf("Output path: %s\n", output_dir);
 	scanf("Debug: %d\n", & DEBUG);
-	scanf("Lattice size (L): %d\n", & L);
+	scanf("Number of particles (N): %d\n", & N);
 	scanf("Tumbling rate (alpha): %f\n", & alpha);
 	scanf("Density (phi): %f\n", & fi);
 	scanf("Simulation time (time units): %f\n", & Tmax);
@@ -97,7 +100,7 @@ int main(int argc, char **argv){
 	printf("Simulation name: %s\n", simName);
 	printf("Output path: %s\n", output_dir);
 	printf("Debug: %d\n",  DEBUG);
-	printf("Lattice size (L): %d\n",  L);
+	printf("Number of particles (N): %d\n", N);
 	printf("Tumbling rate (alpha): %f\n",  alpha);
 	printf("Density (phi): %f\n",  fi);
 	printf("Simulation time (time units): %f\n",  Tmax);
@@ -114,49 +117,9 @@ int main(int argc, char **argv){
 	printf("Time Step: %f\n", dt);
 	printf("Snap measuring interval: %f\n", Tint);
 
-
-		/* DEBUG */ if (DEBUG >= 1) {printf("\n\n\n|||||||||||||||||||| SIMULATION START ||||||||||||||||||||\n\n\n");}
-
-
-	epsilon=epsilon/24;
-
-	/* VARIABLES */
-	N = L*fi;
+	L = N/fi;
 	Dt = mu/beta;
-	float r_potmin = 1.123149; 			// This is for the shifted force for sig=1 and potcut=2.5, for unshifted: sigma * pow(2,1/6);
-	float positions[N];           /* Particles' positions */
-	int partOrder[N];				/* Array idx = particle ID. Array element = particles order. */
-	int orderedPart[N];			/* Array idx = particles order. Array element = particle ID. */
-	int directions[N];            /* Particles' swimming directions (1=+x; 0=-x;) */
-	float trueDirections[N];			/* Particles' resulting velocities */
-	int i, j;					            /* Counter */
-	float V[N];					          /* Potential on each particle*/
-	float Vprime[N];				      /* Gradient of the potential on each particle*/
-	int step;					            /* Time step counter */
-	int clusters[N];				      /* Particles' clusters */
-	float LBclusters[N/2];			  /* Vector with the left boundaries of the clusters */
-	float RBclusters[N/2];			  /* Vector with the right boundaries of the clusters */
-	int Nsize[N];					        /* Vector with the number of clusters of each size */
-	int Ndir[3]={0,0,0};				  /* Vector with the number of clusters in each direction : +, -, 0 */
-	int Ndir_swim[2]={0,0};			  /* Vector with the number of particles swimming in each direction : +, - */
-	int Ndir_res[3]={0,0,0};			/* Vector with the number of particles moving in each direction : +, -, 0 */
-	float C[L/2];					        /* Correlations */
-	float E=0;					          /* Energy of the system (normalized by the number of particles) */
-	clock_t tt;					          /* Real time */
-	clock_t t_0=clock();				  /* Real starting time */
-
-	// Checks.
-	if (sigma != 1 && Vrange != 2.5)
-	{
-		printf("Bad r_potmin! Recompute force zero (r_potmin) for given values of sigma and cutoff.\n");
-		exit(1);
-	}
-
-	if (fi > 1/(r_potmin))
-	{
-		printf("Density too high! Particle overlap! Maximum density is: %f\n", 1/r_potmin);
-		exit(1);
-	}
+	epsilon=epsilon/24;
 
 	/* FILE PARAMETERS */
 
@@ -165,11 +128,18 @@ int main(int argc, char **argv){
 	if (stat(output_dir, & st) == -1) {mkdir(output_dir, 0777);}
 
 	char newdir[192];									/* Directory for the new simulation */
-	sprintf(newdir, "%s/sim_a%.3f_f%.3f_t%010.2f_L%.5d_D%05.2f_Fp%.2f_eps%07.4f_CMOB%d_IS%d_tint%06.1f_dt%7.5f", output_dir, alpha, fi, Tmax, L, Dt, Fp, epsilon, CMOB, INIT_STATE,Tint,dt);	
+	sprintf(newdir, "%s/sim_a%.6f_f%.3f_t%010.2f_N%.5d_D%05.2f_Fp%.2f_eps%07.4f_CMOB%d_IS%d_tint%06.1f_dt%7.5f", output_dir, alpha, fi, Tmax, N, Dt, Fp, epsilon, CMOB, INIT_STATE,Tint,dt);	
 
 	// If it doesn't exist, create it.
 	struct stat st_bis = {0};
 	if (stat(newdir, & st_bis) == -1) {mkdir(newdir, 0777);}
+
+
+
+	FILE *logfile;									/* Log file */
+	char bufferlog[192];
+	sprintf(bufferlog, "%s/out.log", newdir);
+	logfile  = fopen(bufferlog, "w");
 
 	FILE *sc;										/* Saves the number of clusters of the same size overall */
 	char buffersc[192];
@@ -215,53 +185,98 @@ int main(int argc, char **argv){
 	char buffercorr[192];
 	sprintf(buffercorr, "%s/corr.dat", newdir);
 	corr=fopen(buffercorr, "wb");
+	
+	FILE *freearr;										/* Saves free particles at 1/10 of the measure times */
+	char bufferfreearr[192];
+	sprintf(bufferfreearr, "%s/freearr.dat", newdir);
+	freearr=fopen(bufferfreearr, "wb");
+	
+	FILE *clustarr;										/* Saves cluster arrays at 1/10 of the measure times */
+	char bufferclustarr[192];
+	sprintf(bufferclustarr, "%s/clustarr.dat", newdir);
+	clustarr=fopen(bufferclustarr, "wb");
+	
+	FILE *clustdyn;										/* Saves cluster dynamics at initial times (like snapshots) */
+	char bufferclustdyn[192];
+	sprintf(bufferclustdyn, "%s/clustdyn_beg.dat", newdir);
+	clustdyn=fopen(bufferclustdyn, "wb");
+	
+	FILE *clustdynbis;										/* Saves cluster dynamics at steady state (like snapshots) */
+	char bufferclustdynbis[192];
+	sprintf(bufferclustdynbis, "%s/clustdyn_ss.dat", newdir);
+	clustdynbis=fopen(bufferclustdynbis, "wb");
+	
+	FILE *csdt;											/* Saves CSD over time (at measures) */
+	char buffercsdt[192];
+	sprintf(buffercsdt, "%s/csd_t.dat", newdir);
+	csdt=fopen(buffercsdt, "wb");
 
-	FILE * pars;
+	FILE *pars;
 	char bufferspars[192];								/* Saves the parameters of this simulation */
 	sprintf(bufferspars, "%s/parameters.dat", newdir);
 
-	FILE *logfile;									/* Log file */
-	char bufferlog[192];
-	sprintf(bufferlog, "%s/out.log", newdir);
-	logfile  = fopen(bufferlog, "w");
-
-	pars=fopen(bufferspars, "wb");
-	fprintf(pars, "Debug variable: %d (0 = no info printed - 1 = some info printed - 2 = all info printed)\n", DEBUG);
-	fprintf(pars, "Lattice size: %d\n", L);
-	fprintf(pars, "Tumbling rate: %f\n", alpha);
-	fprintf(pars, "Particle density: %f\n", fi);
-	fprintf(pars, "Number of particles: %d\n", (int)N);
-	fprintf(pars, "Total simulation time: %f\n", Tmax);
-	fprintf(pars, "Number of measures: %d\n", measures);
-	fprintf(pars, "Range of the LJ potential: %f\n", Vrange);
-	fprintf(pars, "LJ potential intensity parameter (epsilon): %f\n", epsilon);
-	fprintf(pars, "LJ potential particle diameters parameter (sigma): %d\n", sigma);
-	fprintf(pars, "Propulsion force: %f\n", Fp);
-	fprintf(pars, "Beta - Inverse of the temperature energy: %f\n", beta);
-	fprintf(pars, "Mu - Friction coefficient / mobility: %f\n", mu);
-	fprintf(pars, "Tranlational diffusivity: %f\n", Dt);
-	fprintf(pars, "Mobility of the clusters: %d\n", CMOB);
-	fprintf(pars, "Cluster cutoff distance: %f\n", cluster_cutoff);
-	fprintf(pars, "Initial state of the system: %d (0 = random - 1 = gas - 2 = coarsened)\n", INIT_STATE);
-	fprintf(pars, "Time step: %f\n", dt);
-	fprintf(pars, "Snap measuring interval: %f\n", Tint);
-	fclose(pars);
-
 	if (DEBUG>0) {
-	printf("\nSize of the system: %d\n# of particles: %d\nTumbling rate: %.3f\nTotal simulation time: %f\nMeasuring interval: %f\n",L,N,alpha,Tmax,Tmax/measures );
+	printf("\nSize of the system: %f\n# of particles: %d\nTumbling rate: %.3f\nTotal simulation time: %f\nMeasuring interval: %f\n",L,N,alpha,Tmax,Tmax/measures );
+	}
+
+		/* DEBUG */ if (DEBUG >= 1) {fprintf(logfile,"\n\n\n|||||||||||||||||||| SIMULATION START ||||||||||||||||||||\n\n\n");}
+
+
+	/* VARIABLES */
+	float r_potmin = 1.123149; 			// This is for the shifted force for sig=1 and potcut=2.5, for unshifted: sigma * pow(2,1/6);
+	float positions[N];           /* Particles' positions */
+	int partOrder[N];				/* Array idx = particle ID. Array element = particles order. */
+	int orderedPart[N];			/* Array idx = particles order. Array element = particle ID. */
+	int directions[N];            /* Particles' swimming directions (1=+x; 0=-x;) */
+	float trueDirections[N];			/* Particles' resulting velocities */
+	int i, j;					            /* Counter */
+	float V[N];					          /* Potential on each particle*/
+	float Vprime[N];				      /* Gradient of the potential on each particle*/
+	int step;					            /* Time step counter */
+	int clusters[N];				      /* Particles' clusters */
+	int clusterArray[(int)floor(N/2)][N];
+	float LBclusters[N/2];			  /* Vector with the left boundaries of the clusters */
+	float RBclusters[N/2];			  /* Vector with the right boundaries of the clusters */
+	int Nsize[N];					        /* Vector with the number of clusters of each size */
+	int Ndir[3]={0,0,0};				  /* Vector with the number of clusters in each direction : +, -, 0 */
+	int Ndir_swim[2]={0,0};			  /* Vector with the number of particles swimming in each direction : +, - */
+	int Ndir_res[3]={0,0,0};			/* Vector with the number of particles moving in each direction : +, -, 0 */
+	float C[(int)ceil(L/2)];					        /* Correlations */
+	float E=0;					          /* Energy of the system (normalized by the number of particles) */
+	clock_t tt;					          /* Real time */
+	clock_t t_0=clock();				  /* Real starting time */
+
+	float CoM[N]; // center of mass
+	int sizes[N]; // size of cluster
+	float CSD[N]; // cluster size distribution
+	float probJump[N]; // jumping prob
+	int dirclust[N];  // jumping direction
+	int Nclust = 0;
+
+	// Checks.
+	if (sigma != 1 && Vrange != 2.5)
+	{
+		fprintf(logfile,"ERROR Bad r_potmin! Recompute force zero (r_potmin) for given values of sigma and cutoff.\n");
+		exit(1);
+	}
+
+	if (fi > 1/(r_potmin))
+	{
+		fprintf(logfile,"ERROR Density too high! Particle overlap! Maximum density is: %f\n", 1/r_potmin);
+		exit(1);
 	}
 
 	/* INITIAL STATE OF THE SYSTEM */
 
 	/* DEBUG */ if (DEBUG>=1) 
 					{
-						printf("\n\n\n==========> INITIALIZING THE SYSTEM\n");
+						fprintf(logfile,"\n\n\n==========> INITIALIZING THE SYSTEM\n");
 					}
 	/* DEBUG */	if (DEBUG==3) 
 					{
-						if (INIT_STATE==0) {printf(" - RANDOM\n");}
-						else if (INIT_STATE==2) {printf(" - SINGLE CLUSTER\n");}
-						else if (INIT_STATE==1) {printf(" - DILUTE GAS\n");}
+						if (INIT_STATE==0) {fprintf(logfile," - RANDOM\n");}
+						else if (INIT_STATE==2) {fprintf(logfile," - SINGLE CLUSTER\n");}
+						else if (INIT_STATE==1) {fprintf(logfile," - DILUTE GAS\n");}
 					}
 
 	/* DEBUG INITIAL STATE: positions and directions by hand. */
@@ -287,7 +302,7 @@ int main(int argc, char **argv){
 		for (i=0; i<N; i++) {						/* Particles are N, ordered from 1 to N */
 			float r1=floor(rand()/(float)RAND_MAX*(L-0.000001));				/* Random position [0, L) */
 
-				if (DEBUG==3) {printf("Position %d: %.3f\n",i+1,r1);}
+				if (DEBUG==3) {fprintf(logfile,"Position %d: %.3f\n",i+1,r1);}
 
 			int busy=0;
 			for (j=0; j<i; j++) {
@@ -295,12 +310,12 @@ int main(int argc, char **argv){
 				if (ddist<0) {ddist=-ddist;}
 				if (ddist>L/2) {ddist=L-ddist;}
 
-				    if (DEBUG==3) {printf("  Position %d: %.3f - Distance: %.3f\n",j+1,positions[j],ddist);}
+				    if (DEBUG==3) {fprintf(logfile,"  Position %d: %.3f - Distance: %.3f\n",j+1,positions[j],ddist);}
 
 				if (ddist<sigma) {busy=1; continue;}
 			}
 
-				if (DEBUG==3) {printf("Busy: %d\n",busy);}
+				if (DEBUG==3) {fprintf(logfile,"Busy: %d\n",busy);}
 
 			if (busy==1) {i=i-1; continue;}
 			positions[i]=r1;
@@ -367,6 +382,45 @@ int main(int argc, char **argv){
 			}
 		}
 
+	/* READ FROM FILE */
+	else if (INIT_STATE==4) 
+		{
+		FILE *frame_file;
+		char bufferframe0[192];
+		sprintf(bufferframe0, "frame0_a%.6f_f%.3f_N%.5d_D%05.2f_Fp%.2f_eps%07.4f_CMOB%d.dat", alpha, fi, N, Dt, Fp, epsilon, CMOB);
+		frame_file = fopen(bufferframe0, "r");
+		fscanf(frame_file, "%f ", &T0);
+		for (int i = 0; i < N; i++) 
+			{						
+		  		fscanf(frame_file, "%f %d ", &positions[i], &directions[i]);
+		  		trueDirections[i] = directions[i];
+ 			}
+ 		fclose(frame_file);
+		}
+
+	pars=fopen(bufferspars, "wb");
+	fprintf(pars, "Debug variable: %d (0 = no info printed - 1 = some info printed - 2 = all info printed)\n", DEBUG);
+	fprintf(pars, "Lattice size: %f\n", L);
+	fprintf(pars, "Tumbling rate: %f\n", alpha);
+	fprintf(pars, "Particle density: %f\n", fi);
+	fprintf(pars, "Number of particles: %d\n", (int)N);
+	fprintf(pars, "Total simulation time: %f\n", Tmax);
+	fprintf(pars, "Number of measures: %d\n", measures);
+	fprintf(pars, "Range of the LJ potential: %f\n", Vrange);
+	fprintf(pars, "LJ potential intensity parameter (epsilon): %f\n", epsilon);
+	fprintf(pars, "LJ potential particle diameters parameter (sigma): %d\n", sigma);
+	fprintf(pars, "Propulsion force: %f\n", Fp);
+	fprintf(pars, "Beta - Inverse of the temperature energy: %f\n", beta);
+	fprintf(pars, "Mu - Friction coefficient / mobility: %f\n", mu);
+	fprintf(pars, "Tranlational diffusivity: %f\n", Dt);
+	fprintf(pars, "Mobility of the clusters: %d\n", CMOB);
+	fprintf(pars, "Cluster cutoff distance: %f\n", cluster_cutoff);
+	fprintf(pars, "Initial state of the system: %d (0 = random - 1 = gas - 2 = coarsened - 3 = equidistant - 4 = read from file)\n", INIT_STATE);
+	fprintf(pars, "Time step: %f\n", dt);
+	fprintf(pars, "Snap measuring interval: %f\n", Tint);
+	fprintf(pars, "Initial time: %f\n", T0);
+	fclose(pars);
+
 	/* Initiaize cluster arrays */
 	for (int i = 0; i < N; ++i)
 		{
@@ -376,11 +430,11 @@ int main(int argc, char **argv){
 
 		/*DEBUG*/ 	if (DEBUG > 1)
 						{
-							printf("\nIntial state of the system:\n");
-							for (i=0; i<N; i++) {printf("%.3f ",positions[i]);}
-							printf("\n");
-							for (i=0; i<N; i++) {printf("%d ",directions[i]);}
-							printf("\n");
+							fprintf(logfile,"\nIntial state of the system:\n");
+							for (i=0; i<N; i++) {fprintf(logfile,"%.3f ",positions[i]);}
+							fprintf(logfile,"\n");
+							for (i=0; i<N; i++) {fprintf(logfile,"%d ",directions[i]);}
+							fprintf(logfile,"\n");
 						}
 
 
@@ -388,7 +442,7 @@ int main(int argc, char **argv){
 
 	/* DEBUG */ if (DEBUG >= 1)
 				{
-					printf("\n\n========> Compute particle order");
+					fprintf(logfile,"\n\n========> Compute particle order");
 				}
 
 	// Initialize order arrays.
@@ -433,7 +487,7 @@ int main(int argc, char **argv){
 
 	/* DEBUG */ if (DEBUG >= 1)
 				{
-					printf("\n\n========> Neighbour list");
+					fprintf(logfile,"\n\n========> Neighbour list");
 				}
 
 	// Initialize neighbour array: if -1 no neighbours.
@@ -459,33 +513,33 @@ int main(int argc, char **argv){
 
 		/* DEBUG */	if (DEBUG > 2)
 					{
-						printf("\nPositions: \n");
+						fprintf(logfile,"\nPositions: \n");
 						for(int n = 0 ; n < N; n++ ) {   
-						  printf("%f ", positions[n]);
+						 fprintf(logfile,"%f ", positions[n]);
 						}
 
-						printf("\nOrdered Positions: \n");
+						fprintf(logfile,"\nOrdered Positions: \n");
 						for(int n = 0 ; n < N; n++ ) {   
-						  printf("%f ", orderedPos[n]);
+						 fprintf(logfile,"%f ", orderedPos[n]);
 						}
 
-						printf("\nThe particles order: \n");
+						fprintf(logfile,"\nThe particles order: \n");
 						for(int n = 0 ; n < N; n++ ) {   
-						  printf("%d ", particlesOrder[n]);
+						 fprintf(logfile,"%d ", particlesOrder[n]);
 						}
 
-						printf("\nThe ordered particles: \n");
+						fprintf(logfile,"\nThe ordered particles: \n");
 						for(int n = 0 ; n < N; n++ ) {   
-						  printf("%d ", orderedParticles[n]);
+						 fprintf(logfile,"%d ", orderedParticles[n]);
 						}
-						printf("\n");
-						printf("\nThe particles neighbours: \n");
+						fprintf(logfile,"\n");
+						fprintf(logfile,"\nThe particles neighbours: \n");
 						for(int n = 0 ; n < N; n++ ) {   
-							printf("Particle %d. Neighbours: %d and %d \n", n, neighbours[n][0],neighbours[n][1]);
-							printf("Position %f. Neighbours: %f and %f \n", positions[n], positions[neighbours[n][0]], positions[neighbours[n][1]]);
-							printf("\n");
+							fprintf(logfile,"Particle %d. Neighbours: %d and %d \n", n, neighbours[n][0],neighbours[n][1]);
+							fprintf(logfile,"Position %f. Neighbours: %f and %f \n", positions[n], positions[neighbours[n][0]], positions[neighbours[n][1]]);
+							fprintf(logfile,"\n");
 						}
-						printf("\n");
+						fprintf(logfile,"\n");
 					}
 	
 
@@ -542,8 +596,8 @@ int main(int argc, char **argv){
 	  	// Check particle is inside the box.
 	  	if (positions[ptm] < 0 || positions[ptm] >= L)
 		{
-			printf("\n OUT OF THE BOX! \npositions[%d] = %f\n", ptm, positions[ptm]);
-			exit(1);
+			fprintf(logfile,"\n ERROR OUT OF THE BOX! \npositions[%d] = %f\n", ptm, positions[ptm]);
+			// exit(1);
 		}
 
 	  		/* DEBUG*/ if (DEBUG >= 1) {fprintf(logfile, "\n\n========> PATICLE LOOP - ptm = %d\n",ptm);}
@@ -623,7 +677,7 @@ int main(int argc, char **argv){
 
 						if (j != N)
 						{
-							fprintf(logfile, "\n¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡ QUANTUM JUMP !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+							fprintf(logfile, "\nERROR QUANTUM JUMP. n");
 							fprintf(logfile, "\nThe ordered particles: \n");
 							for(int n = 0 ; n < 2*N; n++ ) {   
 							  fprintf(logfile, "%d ", orderedParticlesConc[n]);
@@ -637,7 +691,7 @@ int main(int argc, char **argv){
 							for (i=0; i<N; i++) {fprintf(logfile, "%.3f ", positions[i]);}
 							fprintf(logfile, "\n");
 
-							//exit(0);
+							// exit(1);
 						}
 					}
 
@@ -676,31 +730,32 @@ int main(int argc, char **argv){
 					// Checks
 					if (isnan(Vprime[ptm]) || isinf(Vprime[ptm]) ) 
 						{
-							printf("\n\nLEFT\n");
-							printf("ptm: %d\n", ptm); 
-							printf("ptmaux: %d\n", ptmaux); 
-							printf("pos: %f\n", pos);
-							printf("posLneigh[ptmaux]: %f\n", positions[neighbours[ptmaux][0]]);
-							printf("distaux: %f\n", distaux);
-							printf("Vrange: %f\n", Vrange);
-							printf("eps: %f\n", epsilon);
-							printf("sigma: %d\n", sigma);
-							printf("Vprime[%d -> %d]: %f\n", neighbours[ptmaux][0], ptm, LJprime(epsilon, sigma, Vrange, distaux));
-							printf("VprimeTOT[%d]: %f\n\n", ptm, Vprime[ptm]);
-							printf("Number of left beighbours: %d\n", numbLeftNeighs);
-							printf("1st neighbour\n");
-							printf("positionsL[%d]: %f\n", neighbours[ptm][0], positions[neighbours[ptm][0]]);
-							printf("Rest of neighbours\n");
-							printf("positions[ptmaux = %d]: %f\n", ptmaux, positions[neighbours[ptmaux][0]]);
-							printf("\nState: \n");
-		      				for (i=0; i<N; i++) {printf("%.3f ", positions[i]);}
-		      				printf("\n\n");
-							exit(1);
+							fprintf(logfile,"\n\nERROR Bad potential.\n");
+							fprintf(logfile,"LEFT\n");						
+							fprintf(logfile,"ptm: %d\n", ptm); 
+							fprintf(logfile,"ptmaux: %d\n", ptmaux); 
+							fprintf(logfile,"pos: %f\n", pos);
+							fprintf(logfile,"posLneigh[ptmaux]: %f\n", positions[neighbours[ptmaux][0]]);
+							fprintf(logfile,"distaux: %f\n", distaux);
+							fprintf(logfile,"Vrange: %f\n", Vrange);
+							fprintf(logfile,"eps: %f\n", epsilon);
+							fprintf(logfile,"sigma: %d\n", sigma);
+							fprintf(logfile,"Vprime[%d -> %d]: %f\n", neighbours[ptmaux][0], ptm, LJprime(epsilon, sigma, Vrange, distaux));
+							fprintf(logfile,"VprimeTOT[%d]: %f\n\n", ptm, Vprime[ptm]);
+							fprintf(logfile,"Number of left beighbours: %d\n", numbLeftNeighs);
+							fprintf(logfile,"1st neighbour\n");
+							fprintf(logfile,"positionsL[%d]: %f\n", neighbours[ptm][0], positions[neighbours[ptm][0]]);
+							fprintf(logfile,"Rest of neighbours\n");
+							fprintf(logfile,"positions[ptmaux = %d]: %f\n", ptmaux, positions[neighbours[ptmaux][0]]);
+							fprintf(logfile,"\nState: \n");
+		      				for (i=0; i<N; i++) {fprintf(logfile,"%.3f ", positions[i]);}
+		      				fprintf(logfile,"\n\n");
+							// exit(1);
 						}
 					if (ptm == neighbours[ptmaux][0])
 						{
-							fprintf(logfile, "¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡ EH, AUTOREFERENCIA !!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-							//exit(0);
+							fprintf(logfile, "ERROR SELF REFERENCE.\n");
+							// exit(1);
 						}
 
 					ptmaux = neighbours[ptmaux][0];
@@ -739,32 +794,33 @@ int main(int argc, char **argv){
 					// Checks
 					if (isnan(Vprime[ptm]) || isinf(Vprime[ptm]) ) 
 						{
-							printf("\n\nRIGHT\n");
-							printf("ptm: %d\n", ptm); 
-							printf("ptmaux: %d\n", ptmaux); 
-							printf("pos: %f\n", pos);
-							printf("posRneigh[ptmaux]: %f\n", positions[neighbours[ptmaux][1]]);
-							printf("distaux: %f\n", distaux);
-							printf("Vrange: %f\n", Vrange);
-							printf("eps: %f\n", epsilon);
-							printf("sigma: %d\n", sigma);
-							printf("Vprime[%d -> %d]: %f\n", neighbours[ptmaux][1], ptm, LJprime(epsilon, sigma, Vrange, distaux));
-							printf("VprimeTOT[%d]: %f\n\n", ptm, Vprime[ptm]);
-							printf("Number of right beighbours: %d\n", numbRightNeighs);
-							printf("1st neighbour\n");
-							printf("positionsR[%d]: %f\n", neighbours[ptm][1], positions[neighbours[ptm][1]]);
-							printf("Rest of neighbours\n");
-							printf("positions[ptmaux = %d]: %f\n", ptmaux, positions[neighbours[ptmaux][1]]);
-							printf("\nState: \n");
-		      				for (i=0; i<N; i++) {printf("%.3f ", positions[i]);}
-		      				printf("\n\n");
+							fprintf(logfile,"\n\nERROR Bad potential.\n");
+							fprintf(logfile,"RIGHT\n");
+							fprintf(logfile,"ptm: %d\n", ptm); 
+							fprintf(logfile,"ptmaux: %d\n", ptmaux); 
+							fprintf(logfile,"pos: %f\n", pos);
+							fprintf(logfile,"posRneigh[ptmaux]: %f\n", positions[neighbours[ptmaux][1]]);
+							fprintf(logfile,"distaux: %f\n", distaux);
+							fprintf(logfile,"Vrange: %f\n", Vrange);
+							fprintf(logfile,"eps: %f\n", epsilon);
+							fprintf(logfile,"sigma: %d\n", sigma);
+							fprintf(logfile,"Vprime[%d -> %d]: %f\n", neighbours[ptmaux][1], ptm, LJprime(epsilon, sigma, Vrange, distaux));
+							fprintf(logfile,"VprimeTOT[%d]: %f\n\n", ptm, Vprime[ptm]);
+							fprintf(logfile,"Number of right beighbours: %d\n", numbRightNeighs);
+							fprintf(logfile,"1st neighbour\n");
+							fprintf(logfile,"positionsR[%d]: %f\n", neighbours[ptm][1], positions[neighbours[ptm][1]]);
+							fprintf(logfile,"Rest of neighbours\n");
+							fprintf(logfile,"positions[ptmaux = %d]: %f\n", ptmaux, positions[neighbours[ptmaux][1]]);
+							fprintf(logfile,"\nState: \n");
+		      				for (i=0; i<N; i++) {fprintf(logfile,"%.3f ", positions[i]);}
+		      				fprintf(logfile,"\n\n");
 
-							exit(1);
+							// exit(1);
 						}
 					if (ptm == neighbours[ptmaux][1])
 						{
-							fprintf(logfile, "¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡¡ EH, AUTOREFERENCIA !!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-							exit(1);
+							fprintf(logfile, "ERROR SELF REFERENCE.\n");
+							// exit(1);
 						}	
 
 					ptmaux = neighbours[ptmaux][1];
@@ -832,8 +888,8 @@ int main(int argc, char **argv){
 		/* PBCs (pos = 0 is included, pos = L is excluded). Changed to nfmod, now the jump can be bigger than the box. */
 			// if (npos < 0.f) {npos = npos + L;}
 			// else if (npos >= (float)L) {npos = npos - L;}
-		npos = nfmod(npos, (float)L);
-		if (npos == (float)L){npos = 0.f;}
+		npos = nfmod(npos, L);
+		if (npos == L){npos = 0.f;}
 
 			/* DEBUG */ if (DEBUG >= 2) {fprintf(logfile, "Expected new position (with PBCs): %.3f\n",npos);}
 
@@ -853,18 +909,18 @@ int main(int argc, char **argv){
 				    }
 
 		// Check new position is inside box.
-		if (npos >= (float)L || npos < 0.f || positions[ptm] >= (float)L || positions[ptm] < 0.f || distR < 1.f || distL < 1.f)
+		if (npos >= L || npos < 0.f || positions[ptm] >= L || positions[ptm] < 0.f || distR < 1.f || distL < 1.f)
 			{
-				printf("\n\nBEFORE\n");
-				printf("eta: %.3f\n",eta);
-				printf("Vprime: %f\n", Vprime[ptm]);
-				printf("positions[%d]: %f\n", ptm, positions[ptm]);
-				printf("directions: %d\n",vel);
-				printf("trueDirections: %f\n", trueDirections[ptm]);
-				printf("position[%d] L: %f\n", neighbours[ptm][0], positions[neighbours[ptm][0]]);
-				printf("position[%d] R: %f\n", neighbours[ptm][1], positions[neighbours[ptm][1]]);
-				printf("pos: %f\nnpos: %f\ndistJump: %f\ndistL: %f\ndistL-potmin: %f\n", pos, npos, distJump, distL, distL-r_potmin);
-				printf("distR: %f\ndistR-potmin: %f\n", distR, distR-r_potmin);
+				fprintf(logfile,"\n\nBEFORE\n");
+				fprintf(logfile,"eta: %.3f\n",eta);
+				fprintf(logfile,"Vprime: %f\n", Vprime[ptm]);
+				fprintf(logfile,"positions[%d]: %f\n", ptm, positions[ptm]);
+				fprintf(logfile,"directions: %d\n",vel);
+				fprintf(logfile,"trueDirections: %f\n", trueDirections[ptm]);
+				fprintf(logfile,"position[%d] L: %f\n", neighbours[ptm][0], positions[neighbours[ptm][0]]);
+				fprintf(logfile,"position[%d] R: %f\n", neighbours[ptm][1], positions[neighbours[ptm][1]]);
+				fprintf(logfile,"pos: %f\nnpos: %f\ndistJump: %f\ndistL: %f\ndistL-potmin: %f\n", pos, npos, distJump, distL, distL-r_potmin);
+				fprintf(logfile,"distR: %f\ndistR-potmin: %f\n", distR, distR-r_potmin);
 			}	
 
 	    // If moving to the left.
@@ -881,7 +937,7 @@ int main(int argc, char **argv){
 
 		    	if (distL < 1)
 		    		{
-						printf("distL = %f < 1\n", distL);		    	
+						fprintf(logfile,"ERROR OVERLAP\ndistL = %f < 1\n", distL);		    	
 					}
 
 		    	// If the new position is at the other side of the PBC frontier.
@@ -891,7 +947,7 @@ int main(int argc, char **argv){
 		    	// UPDATE POSITION, If the jump is smaller than the distance to its neighbor.
 		    	if (distJump <= distL - r_potmin)
 		    		{ 
-		    			if (DEBUG > 1){	printf("1L. jump < distNeigh\n"); } 
+		    			if (DEBUG > 1){	fprintf(logfile,"1L. jump < distNeigh\n"); } 
 
 		    			positions[ptm] = npos; 
 		    		}
@@ -903,59 +959,59 @@ int main(int argc, char **argv){
 		    		// overlap, so we have to take care of this.		    	
 		    	else if (distJump > distL - r_potmin && distL + distR >= 2*r_potmin)
 		    		{
-		    			if (DEBUG > 1){ printf("2L. jump > distNeigh, space\n"); }
+		    			if (DEBUG > 1){ fprintf(logfile,"2L. jump > distNeigh, space\n"); }
 
 		    			// If r_potmin of the particle is at the other side of the PBC frontier.		    		
-		    			if (positions[neighbours[ptm][0]] + r_potmin > (float)L)
+		    			if (positions[neighbours[ptm][0]] + r_potmin > L)
 			    			{
-			    				positions[ptm] = positions[neighbours[ptm][0]] + r_potmin - (float)L;
+			    				positions[ptm] = positions[neighbours[ptm][0]] + r_potmin - L;
 			    			}
 		    			// If it is in the bulk.
-		    			else if (positions[neighbours[ptm][0]] + r_potmin < (float)L && positions[neighbours[ptm][0]] + r_potmin >= 0.f)
+		    			else if (positions[neighbours[ptm][0]] + r_potmin < L && positions[neighbours[ptm][0]] + r_potmin >= 0.f)
 			    			{
 			    				positions[ptm] = positions[neighbours[ptm][0]] + r_potmin;
 			    			}
 		    			// This can occur.
-		    			else if (positions[neighbours[ptm][0]] + r_potmin == (float)L)
+		    			else if (positions[neighbours[ptm][0]] + r_potmin == L)
 			    			{
 			    				positions[ptm] = 0.f;
 			    			}
 		    			else
 		    				{
-		    					printf("ERROR! - L\n");
-		    					exit(1);
+		    					fprintf(logfile,"ERROR - 1L\n");
+		    					// exit(1);
 		    				}
 		    		}
 
 		    	// If the particle doesn't have space, it moves to a equidistant distance from its neighbours.
 		    	else if (distJump > distL - r_potmin && distL + distR < 2*r_potmin)
 			    	{
-						if (DEBUG > 1){	printf("2L. jump > distNeigh, no space\n"); }
+						if (DEBUG > 1){	fprintf(logfile,"2L. jump > distNeigh, no space\n"); }
 		    			// If (distR+distL)/2 is at the other side of the PBC frontier.
-		    			if (positions[neighbours[ptm][0]] + (distR+distL)/2 > (float)L)
+		    			if (positions[neighbours[ptm][0]] + (distR+distL)/2 > L)
 			    			{
-			    				positions[ptm] = positions[neighbours[ptm][0]] + (distR+distL)/2 - (float)L;
+			    				positions[ptm] = positions[neighbours[ptm][0]] + (distR+distL)/2 - L;
 			    			}
 		    			// If it is in the bulk.
-		    			else if (positions[neighbours[ptm][0]] + (distR+distL)/2 < (float)L && positions[neighbours[ptm][0]] + (distR+distL)/2 >= 0.f)
+		    			else if (positions[neighbours[ptm][0]] + (distR+distL)/2 < L && positions[neighbours[ptm][0]] + (distR+distL)/2 >= 0.f)
 			    			{
 			    				positions[ptm] = positions[neighbours[ptm][0]] + (distR+distL)/2;
 			    			}
 		    			// This can occur.
-		    			else if (positions[neighbours[ptm][0]] + (distR+distL)/2 == (float)L)
+		    			else if (positions[neighbours[ptm][0]] + (distR+distL)/2 == L)
 			    			{
 			    				positions[ptm] = 0.f;
 			    			}
 		    			else
 		    				{
-		    					printf("ERROR! - L\n");
-		    					exit(1);
+		    					fprintf(logfile,"ERROR - 2L\n");
+		    					// exit(1);
 		    				}			    		
 			    	}
 		    	else 
 		    		{
-		    			fprintf(logfile, "\nERROR!\ndistJump: %f\ndistR: %f\ndistL: %f",distJump, distR, distL);
-		    			exit(1);
+		    			fprintf(logfile, "\nERROR - 3L\ndistJump: %f\ndistR: %f\ndistL: %f",distJump, distR, distL);
+		    			// exit(1);
 		    		}
 		    }
 
@@ -965,22 +1021,22 @@ int main(int argc, char **argv){
 		    		/* DEBUG */ if ( DEBUG > 2) {fprintf(logfile, "\nMOVING RIGHT\n");}
 
 		    	// If the right neighbour is at the other side of the PBC frontier.
-		    	if (pos + distR > (float)L)
+		    	if (pos + distR > L)
 		    		{ distR = L - distR; }
 
 		    	if (distR < 1)
 		    		{
-						printf("distR = %f < 1\n", distR);		    	
+						fprintf(logfile,"ERROR OVERLAP\ndistR = %f < 1\n", distR);		    	
 					}
 
 		    	// If the new position is at the other side of the PBC frontier.
-		    	if (pos + distJump > (float)L)
+		    	if (pos + distJump > L)
 		    		{ distJump = L - distJump; }
 
 		    	// UPDATE POSITION, If the jump is smaller than the distance to its neighbor.
 		    	if (distJump <= distR - r_potmin)
 		    		{ 
-		    			if (DEBUG > 1){	printf("1L. jump < distNeigh\n"); } 
+		    			if (DEBUG > 1){	fprintf(logfile,"1R. jump < distNeigh\n"); } 
 		    			positions[ptm] = npos; 
 		    		}
 
@@ -991,27 +1047,27 @@ int main(int argc, char **argv){
 		    		// overlap, so we have to take care of this.
 		    	else if (distJump > distR - r_potmin && distL + distR >= 2*r_potmin)
 		    		{
-		    			if (DEBUG > 1){ printf("2L. jump > distNeigh, space\n"); }
+		    			if (DEBUG > 1){ fprintf(logfile,"2R. jump > distNeigh, space\n"); }
 		    			// If r_potmin of the particle is at the other side of the PBC frontier.
 		    			if (positions[neighbours[ptm][1]] - r_potmin < 0.f)
 			    			{
-			    				positions[ptm] = positions[neighbours[ptm][1]] - r_potmin + (float)L;
+			    				positions[ptm] = positions[neighbours[ptm][1]] - r_potmin + L;
 			    			}
 		    			// If it is in the bulk.
-		    			else if (positions[neighbours[ptm][1]] - r_potmin >= 0.f && positions[neighbours[ptm][1]] - r_potmin < (float)L)
+		    			else if (positions[neighbours[ptm][1]] - r_potmin >= 0.f && positions[neighbours[ptm][1]] - r_potmin < L)
 			    			{
 			    				positions[ptm] = positions[neighbours[ptm][1]] - r_potmin;
 			    			}
 		    			// This shouldn't occur.
-		    			else if (positions[neighbours[ptm][1]] - r_potmin == (float)L)
+		    			else if (positions[neighbours[ptm][1]] - r_potmin == L)
 			    			{
 			    				positions[ptm] = 0.f;
-			    				printf("OJO!\n");
+			    				fprintf(logfile,"ERROR - OJO!\n");
 			    			}
 		    			else
 		    				{
-		    					printf("ERROR! - R\n");
-		    					exit(1);
+		    					fprintf(logfile,"ERROR - 1R\n");
+		    					// exit(1);
 		    				}		    			
 
 		    		}
@@ -1019,47 +1075,53 @@ int main(int argc, char **argv){
 		    	// If the particle doesn't have space, it moves to a equidistant distance from its neighbours.
 		    	else if (distJump > distR - r_potmin && distL + distR < 2*r_potmin)
 			    	{
-						if (DEBUG > 1){	printf("2R. jump > distNeigh, no space\n"); }
+						if (DEBUG > 1){	fprintf(logfile,"2R. jump > distNeigh, no space\n"); }
 
 		    			// If (distR+distL)/2 is at the other side of the PBC frontier.
 		    			if (positions[neighbours[ptm][1]] - (distR+distL)/2 < 0.f)
 			    			{
-			    				positions[ptm] = positions[neighbours[ptm][1]] - (distR+distL)/2 + (float)L;
+			    				positions[ptm] = positions[neighbours[ptm][1]] - (distR+distL)/2 + L;
 			    			}
 		    			// If it is in the bulk.
-		    			else if (positions[neighbours[ptm][1]] - (distR+distL)/2 >= 0.f && positions[neighbours[ptm][1]] - (distR+distL)/2 < (float)L)
+		    			else if (positions[neighbours[ptm][1]] - (distR+distL)/2 >= 0.f && positions[neighbours[ptm][1]] - (distR+distL)/2 < L)
 			    			{
 			    				positions[ptm] = positions[neighbours[ptm][1]] - (distR+distL)/2;
 			    			}
 		    			// This shouldn't occur.
-		    			else if (positions[neighbours[ptm][1]] - (distR+distL)/2 == (float)L)
+		    			else if (positions[neighbours[ptm][1]] - (distR+distL)/2 == L)
 			    			{
 			    				positions[ptm] = 0.f;
-			    				printf("OJO!\n");
+			    				fprintf(logfile,"OJO!\n");
 			    			}
+						else
+		    				{
+		    					fprintf(logfile,"ERROR - 2R\n");
+		    					// exit(1);
+		    				}	
 			    	}
 
 		    	else 
 		    		{
-		    			fprintf(logfile, "\nERROR!\ndistJump: %f\ndistR: %f\ndistL: %f",distJump, distR, distL);
-		    			exit(1);
+		    			fprintf(logfile, "\nERROR - 3R\ndistJump: %f\ndistR: %f\ndistL: %f",distJump, distR, distL);
+		    			// exit(1);
 		    		}
 		    }
 
 		// Due to floating point precision (e.g. 500 - 0.000013 = 500.000000) sometimes positions[ptm] = 500 occur, so we need to:
-		if (positions[ptm] == (float)L){ positions[ptm] = 0.f; }
+		if (positions[ptm] == L){ positions[ptm] = 0.f; }
 
 	    // Check box again.
 		if (positions[ptm] >= L || positions[ptm] < 0 || distR < 1.f || distL < 1.f)
 			{
-				printf("\n\nAFTER\n");
-				printf("\n\npositions[%d]: %f\n", ptm, positions[ptm]);
-				printf("trueDirections: %f\n", trueDirections[ptm]);
-				printf("position[%d] L: %f\n", neighbours[ptm][0], positions[neighbours[ptm][0]]);
-				printf("position[%d] R: %f\n", neighbours[ptm][1], positions[neighbours[ptm][1]]);
-				printf("pos: %f\nnpos: %f\ndistJump: %f\ndistL: %f\ndistL-potmin: %f\n", pos, npos, distJump, distL, distL-r_potmin);
-				printf("distR: %f\ndistR-potmin: %f\n", distR, distR-r_potmin);
-				exit(1);
+				fprintf(logfile,"\n\nERROR Out of BOX or OVERLAP.\n");
+				fprintf(logfile,"\n");
+				fprintf(logfile,"\n\npositions[%d]: %f\n", ptm, positions[ptm]);
+				fprintf(logfile,"trueDirections: %f\n", trueDirections[ptm]);
+				fprintf(logfile,"position[%d] L: %f\n", neighbours[ptm][0], positions[neighbours[ptm][0]]);
+				fprintf(logfile,"position[%d] R: %f\n", neighbours[ptm][1], positions[neighbours[ptm][1]]);
+				fprintf(logfile,"pos: %f\nnpos: %f\ndistJump: %f\ndistL: %f\ndistL-potmin: %f\n", pos, npos, distJump, distL, distL-r_potmin);
+				fprintf(logfile,"distR: %f\ndistR-potmin: %f\n", distR, distR-r_potmin);
+				// exit(1);
 				//raise(SIGSEGV);
 			}	    		
 
@@ -1102,291 +1164,500 @@ int main(int argc, char **argv){
 
 	/* COLLECTIVE DYNAMICS */
 
-	/* EVALUATE CLUSTERS */
-	if (DEBUG >= 1) {fprintf(logfile, "\n\n\n==========> CLUSTER DYNAMICS - t = %d\n",step+1);}
+		/* DEBUG*/ if (DEBUG >= 1) {fprintf(logfile, "\n\n========> COLLECTIVE DYNAMICS \n");}
 
-	float R_x=L, L_x=0, o_R_x, limit_broken=0;			/* Right-boundary, left-boundary and old right-boundary positions */
-	int R_part, L_part, size=1;					/* Right-boundary particle, displacement for broken clusters and size*/
-	int broken=0;						/* Broken cluster variable */
-	int incluster=1, incluster_L=1;				/* Inside cluster variables */
-	int c=1;							/* Cluster counter */
-	float prv, nxt;						/* Incluster limits */
-	for (i=0; i<N; i++) {
-	  if (positions[i]<R_x) {R_x=positions[i]; R_part=i;}	/* Find most-left particle - starting right boundary */
-	  if (positions[i]>L_x) {L_x=positions[i]; L_part=i;}	/* Find most-right particle - starting left boundary */
-	}
-	if (DEBUG == 6) {fprintf(logfile, "Left-most particle: %d @ position %.5f\nRight-most particle: %d @ position %.5f\n",R_part+1,R_x,L_part+1,L_x);}
-	prv=R_x-cluster_cutoff;
-	if (prv<0 && L_x>prv+L) {						/* If there most-right particle is less than cluster_cutoff away (w/ PBCs) from most-left particle... */
-	  broken=c;							  /* cluster is broken */
-	  clusters[R_part]=c;
-	  clusters[L_part]=c;					  /* both R_part and L_part are in the cluster (1st one) */
-	  size=2;							  /* size of this cluster is now 2 */
-	}
-	if (DEBUG == 6) {fprintf(logfile, "Broken? (1=yes - 0=no): %d\n",broken);}
-	if (broken==1) {						/* If first cluster is broken... */ /* Compute its size and limits to the left */
-	  while (incluster_L==1) {					  /* as long as we're still in this cluster to the left... */
-	    prv=L_x-cluster_cutoff;					    /* maximum distance for a particle to be in the same cluster */
-	    if (DEBUG == 6) {fprintf(logfile, "    New limit for cluster inclusion: %.5f\n", prv);}
-	    for (i=0; i<N; i++) {
-	      incluster_L=0;					    /* by default assume it's the end of the cluster -> we exit this cluster */
-	      if (positions[i]>prv && positions[i]<L_x && i!=L_part) {  /* if there is a particle to the left of the current boundary less than cluster_cutoff away... */
-	        L_x=positions[i];					      /* update boundary to new particle */
-	        L_part=i;
-	        size++;						      /* increase size */
-	        clusters[i]=c;					      /* tag cluster */
-	        incluster_L=1;					      /* we're still inside the cluster! */
-	        if (DEBUG == 6) {fprintf(logfile, "    Particle %d @ position %.5f -> cluster #%d of size %d\n", i+1, positions[i], c, size);}
-	        break;						      /* exit the particle loop and start over with new boundary */
-	      }
-	    }
-	    if (DEBUG == 6 && incluster==0) {fprintf(logfile, "  End of cluster reached\n");}
-	  }
-	  if (DEBUG == 6) {fprintf(logfile, "Left-boundary of broken cluster is particle %d @ position %.5f\n", L_part+1, L_x);}
-	}
-	if (DEBUG == 6) {fprintf(logfile, "\nMeasure clusters towards the right...\n");}
-	while (R_x<L_x) {						/* While new right-boundary is to the left of the left-boundary (we haven't probed the whole system yet) */
-	  while (incluster==1) {					  /* as long as we're still in this cluster */
-	    float nxt=R_x+cluster_cutoff;				    /* maximum distance for a particle to be in the same cluster */
-	    if (DEBUG == 6) {fprintf(logfile, "  New limit for cluster inclusion: %.5f\n", nxt);}
-	    for (i=0; i<N; i++) {
-	      incluster=0;						    /* by default assume it's the end of the cluster -> we exit this cluster */
-	      if (positions[i]<nxt && positions[i]>R_x && i!=R_part) {  /* if there is a particle to the right of the current boundary less than cluster_cutoff away... */
-	        R_x=positions[i];					      /* update boundary to new particle */
-	        size++;						      /* increase size */
-	        if (size==2) {clusters[R_part]=c;}			      /* tag cluster of previous boundary if this is the second particle in the cluster */
-	        R_part=i;
-	        clusters[i]=c;					      /* tag cluster */
-	        incluster=1;					      /* we're still inside the cluster! */
-	        if (DEBUG == 6) {fprintf(logfile, "    Particle %d @ position %.5f -> cluster #%d of size %d\n", i+1, positions[i], c, size);}
-	        break;						      /* exit the particle loop and start over with new boundary */
-	      }
-	    }
-	    if (DEBUG == 6 && incluster==0) {fprintf(logfile, "  End of cluster reached\n");}
-	  }
-	  if (c==1 && broken==1)  {limit_broken=R_x;}		  /* save the right-boundary of broken cluster */
-	  if (DEBUG == 6 && broken==1) {fprintf(logfile, "Right-limit of the broken cluster: %.5f\n",limit_broken);}
-	  if (size>1) {c++;}					  /* change cluster because we've reached the end */
-	  size=0;
-	  o_R_x=R_x;
-	  R_x=L_x;							  /* reset R_x to the left-most position that is still to the right of old R_x */
-	  for (i=0; i<N; i++) {					  /* Find most-left particle - new cluster right boundary */
-	    if (positions[i]<R_x && positions[i]>o_R_x && i!=R_part) {
-	      R_x=positions[i]; R_part=i; incluster=1; size=1;
-	    }
-	  }
-	  if (DEBUG == 6) {fprintf(logfile, "\nNew cluster #%d starting at position %.5f with size %d\n", c, R_x, size);}
+
+    /* EVALUATE CLUSTER (NEW) */
+
+	/*SAVE CLUSTER ARRAY*/
+	if ((step+1)%(int)ceil((Tmax/(measures*dt/10))) == 0 && step>0) 
+	{
+		fprintf(clustarr, "\nTime: %f\n", (step+1)*dt);
 	}
 
-	/* save # of clusters */
-	if ((step+1)%(int)ceil((Tmax/(measures*dt))) == 0 && step>0) 
+	// Initializing variables.
+	int i = 1;
+	k = 0;
+	int l = 0;
+	bool visited[N];
+    bool inclustL = false;
+    bool inclustR = false;
+    bool crossL = false;
+    bool crossR = false;
+
+	int auxL = 0;
+	int auxR = 0;
+
+	memset(visited, false, sizeof(visited));
+	memset(CoM, 0, sizeof(CoM));
+	memset(sizes, 0, sizeof(sizes)); 
+	memset(CSD, 0, sizeof(CSD)); 
+	memset(probJump, 0, sizeof(probJump));
+	memset(dirclust, 0, sizeof(dirclust)); 
+	memset(clusterArray, 0, sizeof(clusterArray));
+
+	Nclust = 0;
+
+	float distLneigh = 0;
+	float distRneigh = 0;
+
+	if ((step+1)%(int)ceil((Tmax/(measures*dt/10))) == 0 && step>0) 
+	{
+		fprintf(freearr, "%f ", step*dt);
+	}
+
+	for (int j = 0; j < N; ++j)
+	{
+			/* DEBUG*/ if (DEBUG >= 3) 
+						{
+							fprintf(logfile,"\n     -- For j = %d\n", j);
+							fprintf(logfile,"        ID of clus i = %d\n", i);		
+						}
+
+		// If the particle has not been visited.
+		if ( !visited[j] )
 		{
-			fprintf(nc, "%f	%d\n", (step+1)*dt, c-1);
-		}			
+				/* DEBUG*/ if (DEBUG >= 3) {fprintf(logfile,"          Entro en el if: visited[%d] = %d\n", j, visited[j]);}
 
-	/*DEBUG*/	if (DEBUG == 6) 
+			// Compute neighbor distances.
+			distLneigh = fabsf(positions[j] - positions[neighbours[j][0]]);
+			distRneigh = fabsf(positions[j] - positions[neighbours[j][1]]);
+
+				/* DEBUG*/ if (DEBUG >= 3) 
+							{
+								fprintf(logfile,"          distLneigh = %f\n", distLneigh);
+								fprintf(logfile,"          distRneigh = %f\n", distRneigh);
+							}
+
+			// If neighbors are at the other side of PBC frontier, fix distance.
+			if ( positions[j] - distLneigh < 0.f)
+				{ 
+					distLneigh = L - distLneigh;
+						/* DEBUG*/ if (DEBUG >= 3) {fprintf(logfile,"          PBC distLneigh = %f\n", distLneigh);}
+				}
+
+			if ( positions[j] + distRneigh > L)
+				{ 
+					distRneigh = L - distRneigh; 
+						/* DEBUG*/ if (DEBUG >= 3) {fprintf(logfile,"          PBC distRneigh = %f\n", distRneigh);}				
+				}
+
+			// If the particle doesnt have neighbors, its free.
+			if ( distLneigh >= cluster_cutoff && fabsf(positions[j] - positions[neighbours[j][1]]) >= cluster_cutoff )
+			{
+					/* DEBUG*/ if (DEBUG >= 3) {fprintf(logfile,"\n          1. Free Particle.\n");}			
+				clusterArray[0][k] = j;
+				visited[j] = true;			
+
+				/*SAVE CLUSTER ARRAY*/
+				if ((step+1)%(int)ceil((Tmax/(measures*dt/10))) == 0 && step>0) 
 				{
-	      			fprintf(logfile, "\n");
-	      			for (i=0; i<N; i++) {fprintf(logfile, "%d ",clusters[i]);}
-	      			fprintf(logfile, "\n");
-	      			fprintf(logfile, "Number of clusters: %d\n",c-1);
-	    		}
+					fprintf(freearr, "%d ", j);
+				}
+				k++;
+				continue;
+			}
 
+				/* DEBUG*/ if (DEBUG >= 3) {fprintf(logfile,"\n          2. Particle in cluster.\n");}
 
+	        inclustL = true;
+	        inclustR = true;
+	        auxL = j;
+	        auxR = j;
+			clusterArray[i][0] = j;
+			visited[j] = true;			
+	        CoM[i] += positions[j];
+            dirclust[i] += directions[j];
+	        l = 1;
 
+	        	/* DEBUG*/ if (DEBUG >= 3) 
+	        				{
+	        					fprintf(logfile,"           auxL = auxR = j = %d\n", j);
+        						fprintf(logfile,"           Visited Array:\n");
+    							for (int iii = 0; iii < N; ++iii){ fprintf(logfile,"%d ", visited[iii]); }
+    							fprintf(logfile,"\n           inclustL = %d, !visited[auxL = %d] = %d\n", inclustL, auxL, !visited[auxL]);
+    						}
 
-
-	/* CLUSTERS MVMNT */
-
-	if (DEBUG >= 1) {fprintf(logfile, "\n\n======> Cluster movement");}
-
-	if (CMOB==1) {						/* If moving clusters are chosen do collective dynamics */
-
-	  /* CHANGE POSITION OF CLUSTERS */
-	  if (DEBUG==6) {fprintf(logfile, "\nCOLLECTIVE DYNAMICS - t=%f\n",(step+1)*dt);}
-	  int dir, size;						/* Cluster direction and size variables */
-	  float clusterprob;					/* Cluster jumping probability variable */
-	  float clRB, clLB;						/* Cluster boundaries */
-	  float d=limit_broken+1;					/* Displacement for broken cluster */
-	  int p;
-	  for (i=1; i<c; i++) 
-	  {
-	    dir=0, size=0;						/* Reset direction and size for new cluster */
-	    if (DEBUG==6) {fprintf(logfile, "\nCluster: %d -- Zeroth boundaries: %.3f-%.3f",i,clLB,clRB);}
-	    for (p=0; p<N; p++) 
-	    {					/* Compute the direction, size and boundaries of the cluster */
-	      if (clusters[p]==i) 
-	      {
-	        float posit=positions[p];				/* Position */
-	        if (i==broken) 
+	        // Start exploring left cluster neighbors.
+	        while(inclustL && !visited[neighbours[auxL][0]])
 	        {
-	          posit=posit-d;					/* Displacement of broken cluster */
-	          if (posit<0) {posit=posit+L;}			/* PBCs */
+					/* DEBUG*/ if (DEBUG >= 3) {fprintf(logfile,"\n       -- 2.1 Left while.\n");}
+
+	        	// Compute neighbor distances.
+				distLneigh = fabsf(positions[auxL] - positions[neighbours[auxL][0]]);
+
+					/* DEBUG*/ if (DEBUG >= 3) 
+								{
+									fprintf(logfile,"           positions[auxL = %d] = %f\n", auxL, positions[auxL]);
+									fprintf(logfile,"           positions[Lneigh[auxL] = %d] = %f\n", neighbours[auxL][0], positions[neighbours[auxL][0]]);				
+									fprintf(logfile,"           distLneigh = %f\n", distLneigh);				
+									fprintf(logfile,"           distLneigh = %f\n", distLneigh);
+								}
+
+				// If neighbors are at the other side of PBC frontier, fix distance.
+				if ( positions[auxL] - distLneigh < 0.f)
+					{
+						distLneigh = L - distLneigh;
+						crossL = true;
+
+							/* DEBUG*/ if (DEBUG >= 3) 
+										{
+											fprintf(logfile,"           Neighbor at the other side. crossL =  %d\n", crossL);											
+											fprintf(logfile,"           PBC distLneigh = %f\n", distLneigh);
+										}
+					}
+
+				// If the left neigbor is a cluster neighbor.
+	        	if (distLneigh < cluster_cutoff)
+	        	{
+		        		/* DEBUG*/ if (DEBUG >= 3) 
+		        					{
+		        						fprintf(logfile,"           l = %d\n", l);
+										fprintf(logfile,"           Left neigh is clust neigh (distLneigh = %f < %f).\n", distLneigh, cluster_cutoff);
+									}
+
+	        		// Move focus to him.
+	        		auxL = neighbours[auxL][0];
+	        		/* DEBUG*/ if (DEBUG >= 3) {fprintf(logfile,"           auxL = %d\n", auxL);}
+
+	        		// Add him to the cluster array.
+					clusterArray[i][l] = auxL;
+	        		/* DEBUG*/ if (DEBUG >= 3) {fprintf(logfile,"           clusterArray[%d][%d] = %d\n", i, l, auxL);}					
+
+					// Add him to the array of visited particles.
+					visited[auxL] = true;
+	        		/* DEBUG*/ if (DEBUG >= 3) {fprintf(logfile,"           visited[%d] = %d\n", auxL, visited[auxL]);}										
+					
+					CoM[i] += positions[auxL];
+	        		/* DEBUG*/ if (DEBUG >= 3) 
+	        					{
+	        						fprintf(logfile,"           positions[%d] = %f\n", auxL, positions[auxL]);										
+	        						fprintf(logfile,"           CoM[%d] = %f\n", i, CoM[i]);
+	        					}
+
+                	if (crossL)
+                		{			        					        		
+                			CoM[i] -= L;
+
+								/* DEBUG*/ if (DEBUG >= 3) 
+                							{
+                								fprintf(logfile,"           Cluster crosses left PBC. \n");                			
+			        							fprintf(logfile,"           CoM[%d] = %f\n", i, CoM[i]);
+			        						}
+                		}
+
+	                dirclust[i] += directions[auxL];
+
+		        		/* DEBUG*/ if (DEBUG >= 3) 
+	                				{
+	                					fprintf(logfile,"           directions[%d] = %d\n", auxL, directions[auxL]);
+	        							fprintf(logfile,"           dirclust[%d] = %d\n", i, dirclust[i]);
+	        						}
+
+					l++;
+
+		        		/* DEBUG*/ if (DEBUG >= 3) 
+									{
+										fprintf(logfile,"           Visited Array:\n");
+						        		for (int iii = 0; iii < N; ++iii)
+						        			{
+						        				fprintf(logfile,"%d ", visited[iii]);        				
+						        			}
+
+							        	fprintf(logfile,"\n           Cluster Array:\n");
+							        	for (int ii = 0; ii < (int)floor(N/2); ++ii)
+								        	{
+								        		for (int iii = 0; iii < N; ++iii)
+								        		{
+								        			fprintf(logfile,"%d ", clusterArray[ii][iii]);        				
+								        		}
+							        			fprintf(logfile,"\n");        				
+							    	    	}
+							    	}
+
+	        	} 
+	        	else 
+	        	{ 
+	        			/* DEBUG*/ if (DEBUG >= 3) {fprintf(logfile,"           LEFT END OF CLUSTER\n\n");}
+
+	        		// We reach the left end of the cluster.
+	        		inclustL = false;
+
+	        		// We put the left edge particle of the cluster in the 1st positions.
+	        		clusterArray[i][l-1] = clusterArray[i][0];
+	        		clusterArray[i][0] = auxL;
+
+		        		/* DEBUG*/ if (DEBUG >= 3) 
+	        						{
+	        							fprintf(logfile,"           Cluster Array (swap edge particle):\n");
+							        	for (int ii = 0; ii < (int)floor(N/2); ++ii)
+								        	{
+								        		for (int iii = 0; iii < N; ++iii)
+								        		{
+								        			fprintf(logfile,"%d ", clusterArray[ii][iii]);        				
+								        		}
+							        			fprintf(logfile,"\n");        				
+							    	    	}
+									}
+	        	} 
 	        }
-	        if (size==0) {clRB=posit; clLB=posit;}		/* Reset boundaries for new cluster */
-	        else 
+
+    			/* DEBUG*/ if (DEBUG >= 3) {fprintf(logfile,"\n           inclustR = %d, !visited[auxR = %d] = %d\n", inclustR, auxR, !visited[auxR]);}
+
+
+	        // Start exploring right cluster neighbors.
+	        while(inclustR && !visited[neighbours[auxR][1]])
 	        {
-	          if (posit>clRB) {clRB=posit;}
-	          if (posit<clLB) {clLB=posit;}
+					/* DEBUG*/ if (DEBUG >= 3) {fprintf(logfile,"\n       -- 2.2 Right while.\n");}
+
+	        	// Compute neighbor distances.
+				distRneigh = fabsf(positions[auxR] - positions[neighbours[auxR][1]]);
+
+					/* DEBUG*/ if (DEBUG >= 3) 
+								{
+									fprintf(logfile,"           positions[auxR = %d] = %f\n", auxR, positions[auxR]);
+									fprintf(logfile,"           positions[Rneigh[auxR] = %d] = %f\n", neighbours[auxR][1], positions[neighbours[auxR][1]]);								
+									fprintf(logfile,"           distRneigh = %f\n", distRneigh);
+								}
+
+				// If neighbors are at the other side of PBC frontier, fix distance.
+				if ( positions[auxR] + distRneigh > L)
+					{
+				 		distRneigh = L - distRneigh; 
+						crossR = true;
+
+							/* DEBUG*/ if (DEBUG >= 3)
+										{
+											fprintf(logfile,"           Neighbor at the other side. crossR =  %d\n", crossR);
+											fprintf(logfile,"           PBC distRneigh = %f\n", distRneigh);
+										}
+				 	}
+
+				// If the right neigbor is a cluster neighbor.
+	        	if (distRneigh < cluster_cutoff)
+	        	{
+	        			/* DEBUG*/ if (DEBUG >= 3) 
+	        						{
+	        							fprintf(logfile,"           l = %d\n", l);
+	        							fprintf(logfile,"           Right neigh is clust neigh (distRneigh = %f < %f).\n", distRneigh, cluster_cutoff);
+	        						}
+
+	        		// Move focus to him.	        		
+	        		auxR = neighbours[auxR][1];
+	        			/* DEBUG*/ if (DEBUG >= 3) {fprintf(logfile,"           auxR = %d\n", auxR);}
+
+	        		// Add him to the cluster array.	        		
+					clusterArray[i][l] = auxR;
+	        			/* DEBUG*/ if (DEBUG >= 3) {fprintf(logfile,"           clusterArray[%d][%d] = %d\n", i, l, auxR);}
+
+					// Add him to the array of visited particles.					
+					visited[auxR] = true;
+	        			/* DEBUG*/ if (DEBUG >= 3) {fprintf(logfile,"           visited[%d] = %d\n", auxR, visited[auxR]);}
+
+					CoM[i] += positions[auxR];
+                	if (crossR)
+                		{	        		
+                			CoM[i] += L;
+
+			        			/* DEBUG*/ if (DEBUG >= 3) 
+                							{
+                								fprintf(logfile,"           Cluster crosses right PBC. \n");                			
+			        							fprintf(logfile,"           CoM[%d] = %f\n", i, CoM[i]);
+			        						}
+                		}
+
+	                dirclust[i] += directions[auxR];
+	        		
+		        		/* DEBUG*/ if (DEBUG >= 3) 
+		        					{
+		        						fprintf(logfile,"           directions[%d] = %d\n", auxR, directions[auxR]);
+		        						fprintf(logfile,"           dirclust[%d] = %d\n", i, dirclust[i]);
+		        					}
+
+					l++;
+
+			        	/* DEBUG*/ if (DEBUG >= 3) 
+			        				{
+			        					fprintf(logfile,"           Visited Array:\n");
+						        		for (int iii = 0; iii < N; ++iii)
+						        			{
+						        				fprintf(logfile,"%d ", visited[iii]);        				
+						        			}
+
+							        	fprintf(logfile,"\n           Cluster Array:\n");
+							        	for (int ii = 0; ii < (int)floor(N/2); ++ii)
+								        	{
+								        		for (int iii = 0; iii < N; ++iii)
+								        		{
+								        			fprintf(logfile,"%d ", clusterArray[ii][iii]);        				
+								        		}
+							        			fprintf(logfile,"\n");        				
+							    	    	}
+									}
+
+	        	}
+	        	else 
+	        	{
+	        			/* DEBUG*/ if (DEBUG >= 3) {fprintf(logfile,"           RIGHT END OF CLUSTER\n\n");}       		
+	        		// We reach the right end of the cluster.	        		
+	        		inclustR = false; 
+	        	}       
 	        }
-	        size++;						/* Increment in size */
-	        dir=dir+directions[p];				/* Compute resulting direction */
-	        if (DEBUG==6) 
-	        {
-	          if (i==broken) {fprintf(logfile, "\n  Position of particle %d (displaced cluster by %.3f): %.3f -- New boundaries: %.3f-%.3f",size,d,posit,clLB,clRB);}
-	          else {fprintf(logfile, "\n  Position of particle %d: %.3f -- New boundaries: %.3f-%.3f",size,posit,clLB,clRB);}
-	        }
-	      }
-	    }
-	    if (i==broken) {clRB+=d; clLB+=d;}			/* Undo displacement for broken cluster */
-	    if (clRB>=L) {clRB-=L;}					/* PBCs */
-	    LBclusters[i-1]=clLB;					/* Save the boundaries of the cluster */
-	    RBclusters[i-1]=clRB;
-	    clusterprob=fabsf(dir)/(float)size;			/* Define the jumping probability for the cluster (cambiado abs() por fabsf())*/
-	    int rclust=rand();
-	    if (DEBUG==6) 
-	    {
-	      fprintf(logfile, "\nPosition: %.3f-%.3f\nSize: %d\nDirection: %d\nProbability: %.3f\nRandom number: %.3f\n",clLB,clRB,size,dir,clusterprob,rclust/(float)RAND_MAX);
-	    }
-	    if (rclust<=clusterprob*RAND_MAX) 
-		    {			/* Jumping probability met */
-		      float nclRB=clRB+1;					/* Limit for excluded volume to the right */
-		      if (nclRB>=L) {nclRB-=L;}				/* PBCs */
-		      float pclLB=clLB-1;					/* Limit for excluded volume to the left */
-		      if (pclLB<0) {pclLB+=L;}				/* PBCs */
-		      int allowed=1;
-		      if (dir>0) 
-			      {						/* If positive direction... */
-			        if (DEBUG==6) {fprintf(logfile, "Right-moving cluster. New limit if jump: %.3f\n",nclRB);}
-			        for (p=0; p<N; p++) 
-			        {				/* Check movement of cluster is allowed */
-			          if (clusters[p]==i) {continue;}
-			          float dd=fabsf(positions[p]-nclRB);			/* Distance to other particles */
-			          // if (dd<0) {dd=-dd;}				/* Absolute value (lo he puesto en la linea de arriba)*/
-			          if (dd>L/2) {dd=L-dd;}				/* PBCs */
-			          if (dd<sigma) 
-			          {
-			            allowed=0;
-			            if (DEBUG==6) {fprintf(logfile, "  Distance to particle %d: %.3f - allowed: %d\n",p+1,dd,allowed);}
-			            break;
-			          }							/* Movement isn't allowed if particles are close to it */
-			          if (DEBUG==6) {fprintf(logfile, "  Distance to particle %d: %.3f - allowed: %d\n",p+1,dd,allowed);}
-			        }
-			        if (DEBUG==6) {fprintf(logfile, "Allowed: %d\n",allowed);}
-			        if (allowed==1) 
-			        {					/* ...and movement is allowed */
-			          for (p=0; p<N; p++) 
-			          {
-			            if (clusters[p]==i) 
-			            {
-				            /* Move cluster particles up */	
-				            positions[p]=positions[p]+Fp*dt;
-				            if (positions[p]>=L) {positions[p]=positions[p]-L;}/* PBCs */
-				            }
-			          }
-			        }
-			      }
-		      else if (dir<0) 
-			      {					/* If negative direction... */
-			        if (DEBUG==6) {fprintf(logfile, "Left-moving cluster. New limit if jump: %.3f\n",pclLB);}
-			        for (p=0; p<N; p++) 
-			        {				/* Check movement of cluster is allowed */
-			          if (clusters[p]==i) {continue;}
-			          float dd=fabsf(positions[p]-pclLB);			/* Distance to other particles */
-			          // if (dd<0) {dd=-dd;}				/* Absolute value (lo he puesto en la linea de arriba)*/
-			          if (dd>L/2) {dd=L-dd;}				/* PBCs */
-			          if (dd<sigma) 
-			          {
-			            allowed=0;
-			            if (DEBUG==6) {fprintf(logfile, "  Distance to particle %d: %.3f - allowed: %d\n",p+1,dd,allowed);}
-			            break;
-			          }							/* Movement isn't allowed if particles are close to it */
-			          if (DEBUG==6) {fprintf(logfile, "  Distance to particle %d: %.3f - allowed: %d\n",p+1,dd,allowed);}
-			        }
-			        if (DEBUG==6) {fprintf(logfile, "Allowed: %d\n",allowed);}
-			        if (allowed==1) 
-			        {					/* ...and movement is allowed */
-			          for (p=0; p<N; p++) 
-			          {
-			            if (clusters[p]==i) 
-			            {				  /* Move cluster particles down */
-			              positions[p]=positions[p]-dt*Fp;
-			              if (positions[p]<0) {positions[p]=positions[p]+L;}/* PBCs */
-			            }
-			          }
-			        }
-			      }
-		      if (DEBUG==6) 
-			      {
-			        int ii;
-			        fprintf(logfile, "State of the system:\n");
-			        for (ii=0; ii<N; ii++) {fprintf(logfile, "%.3f ",positions[ii]);}
-			        fprintf(logfile, "\n");
-			        for (ii=0; ii<N; ii++) {fprintf(logfile, "%d ",directions[ii]);}	
-			        fprintf(logfile, "\n");
-			        for (ii=0; ii<N; ii++) {fprintf(logfile, "%d ",clusters[ii]);}
-			        fprintf(logfile, "\n");
-			      }
-		    }
 
-	    /* Only at selected time steps - MEASURING THE SYSTEM */
-	    if ((step+1)%(int)ceil((Tmax/(measures*dt))) ==0 && step>0) 
-		    {				
-		      Nsize[size-1]++;					/* Histogram of the cluster sizes at this time */
-		      if (DEBUG==6) {fprintf(logfile, "Cluster %d Size %d N[%d]=%d\n",i,size,size,Nsize[size-1]);}
-		      if (dir<0) {Ndir[0]++;}				/* Histogram of the cluster directions at this time */
-		      else if (dir==0) {Ndir[1]++;}
-		      else if (dir>0) {Ndir[2]++;}
-		    }
-	  }
+			/*SAVE CLUSTER ARRAY*/
+			if ((step+1)%(int)ceil((Tmax/(measures*dt/10))) == 0 && step>0) 
+			{
+				for (int jj = 0; jj < l; ++jj){ fprintf(clustarr, "%d ", clusterArray[i][jj]); }
+				fprintf(clustarr, "\n");
+			}	        
 
-	}	/* End of CLUSTER MVMNT */
+			sizes[i] = l;
+			CoM[i] = nfmod(CoM[i]/sizes[i], L);
+			CSD[sizes[i]-1] += 1;
+			probJump[i] = abs(dirclust[i])/sizes[i];
+			if (dirclust[i] != 0){dirclust[i] = dirclust[i]/abs(dirclust[i]);}
+			crossL = false;
+			crossR = false;
 
+			if ((step+1)%(int)ceil((Tmax/(measures*dt))) ==0 && step>0) 
+			{				
+				Nsize[sizes[i]-1]++;								/* Histogram of the cluster sizes at this time */
+				if (dirclust[i]<0) {Ndir[0]++;}					/* Histogram of the cluster directions at this time */
+				else if (dirclust[i]==0) {Ndir[1]++;}
+				else if (dirclust[i]>0) {Ndir[2]++;}
+			}
 
-
-
-
-	// MEASUREMENT, SAVING & OUTPUT
-
-	if (DEBUG >= 1) {fprintf(logfile, "\n\n\n==========> MEASUREMENT & OUTPUT\n");}
-
-	/* ONLY MEASURE SIZES AND DIRECTIONS (si CMOB = 1 esta parte esta metida mas arriba). */
-
-	if (CMOB==0) 
-	{		
-	  if (DEBUG==7) {fprintf(logfile, "\n\nMEASURING CLUSTERS - t=%d\n\n",step+1);}
-	  int dir, size;						/* Cluster direction and size variables */
-	  int p;
-	  for (i=1; i<c; i++) 
-	  {
-	    dir=0, size=0;						/* Reset direction and size for new cluster */
-	    for (p=0; p<N; p++) 
-	    {					/* Compute the direction, size and boundaries of the cluster */
-	      if (clusters[p]==i) 
-	      {
-	        size++;						/* Increment in size */
-	        dir=dir+directions[p];				/* Compute resulting direction */
-	      }
-	    }
-	    if (DEBUG==7) {fprintf(logfile, "\nCluster: %d -- Size: %d",i,size);}
-
-	    /* Only at selected time steps - MEASURING THE SYSTEM */
-	    if ((step+1)%(int)ceil((Tmax/(measures*dt))) ==0 && step>0) 
-	    {				
-	      Nsize[size-1]++;					/* Histogram of the cluster sizes at this time */
-	      if (DEBUG>=2) {fprintf(logfile, "Cluster %d Size %d N[%d]=%d\n",i,size,size,Nsize[size-1]);}
-	      if (dir<0) {Ndir[0]++;}				/* Histogram of the cluster directions at this time */
-	      else if (dir==0) {Ndir[1]++;}
-	      else if (dir>0) {Ndir[2]++;}
-	    }
-	  }
+	        i++;
+		}
 	}
 
+	if ((step+1)%(int)ceil((Tmax/(measures*dt/10))) == 0 && step>0) 
+	{
+		fprintf(freearr, "\n");
+	}
+
+	Nclust = i-1;
+
+	/*SAVE TOTAL NUMBER OF CLUSTERS*/
+	if ((step+1)%(int)ceil((Tmax/(measures*dt))) == 0 && step>0) 
+	{
+		fprintf(nc, "%f	%d\n", (step+1)*dt, Nclust);
+	}
+
+	/*SAVE CSD*/
+	if ((step+1)%(int)ceil((Tmax/(measures*dt))) == 0 && step>0) 
+	{
+		fprintf(csdt, "%f ", (step+1)*dt);
+		int ii = 0;
+		for (ii = 0; ii<N; ii++)
+		{
+			fprintf(csdt, "%f ", CSD[ii]);
+		}
+		fprintf(csdt, "\n");
+	}
+
+
+	// 
+
+	/* CLUSTER MOVE (NEW) */
+
+	float dist = 0.f;
+
+	if (CMOB == 1)
+	{
+
+		float xR = 0.f;
+		float xL = 0.f;
+		float nxR = 0.f;
+		float nxL = 0.f;
+		int rclust = 0;
+
+		for (int i = 1; i < Nclust + 1; ++i)
+		{
+			// Positions of the edge particles of the cluster.
+			xR = positions[clusterArray[i][sizes[i]-1]];
+			xL = positions[clusterArray[i][0]];
+
+			// Positions of neighbors of the edge particles.
+			nxR = positions[neighbours[clusterArray[i][sizes[i]-1]][1]];
+			nxL = positions[neighbours[clusterArray[i][0]][0]];
+
+			dist = 0.f;
+
+			// If moving to the right.
+			if (dirclust[i] > 0.f)
+			{
+	    		// Compute distance taking account of PBCs.
+	    		dist = fabsf(nxR - xR);
+				if ( xR + dist > L){ dist = L - dist; }
+			}
+
+			// Moving to the left.
+			else if (dirclust[i] < 0.f)
+			{
+	    		// Compute distance taking account of PBCs.			
+	    		dist = fabsf(xL - nxL);
+				if ( xL - dist < 0.f){ dist = L - dist; }
+			}
+
+			// If the cluster jumps
+			rclust=rand();
+			if (rclust <= probJump[i]*RAND_MAX)
+			{
+				// And the distance to neighbor is larger than the jump distance.
+				if (dist >= r_potmin + sigma)
+				{
+					// The cluster jumps normally.
+					// Update center of mass.
+					CoM[i] += dirclust[i]*dt*Fp;
+
+					// PBCs
+					if (CoM[i] >= L){ CoM[i] -= L; }
+					else if (CoM[i] < 0.f){ CoM[i] += L; }
+					if (CoM[i] == L){ CoM[i] += 0; }
+
+					// Update positions of all particles in cluster.
+					for (int k = 1; k < sizes[i]; ++k)
+					{
+						positions[clusterArray[i][k]] += dirclust[i]*dt*Fp;
+
+						// PBCs
+						if (positions[clusterArray[i][k]] >= L){positions[clusterArray[i][k]] -= L;}
+	            		else if (positions[clusterArray[i][k]] < 0.f){positions[clusterArray[i][k]] += L;}
+	            		if (positions[clusterArray[i][k]] == L){ positions[clusterArray[i][k]] = 0.f; }
+	            	}
+	            }
+	            // If the distance to neighbor is smaller than the jump distance.
+	            else if (dist < r_potmin + sigma)
+				{
+					// The cluster sticks onto its neighbor.
+					CoM[i] += (dist - r_potmin)*dirclust[i]*dt;
+
+					// PBCs
+					if (CoM[i] >= L){ CoM[i] -= L; }
+					else if (CoM[i] < 0){ CoM[i] += L; }
+					if (CoM[i] == L){ CoM[i] += 0; }
+
+					// Update positions of all particles in cluster.
+					for (int k = 1; k < sizes[i]; ++k)
+					{
+	        			positions[clusterArray[i][k]] += (dist - r_potmin)*dirclust[i]*dt;
+
+	        			//PBCs
+	        			if (positions[clusterArray[i][k]] >= L){ positions[clusterArray[i][k]] -= L; }
+	        			else if (positions[clusterArray[i][k]] < 0){ positions[clusterArray[i][k]] += L; }
+	            		if (positions[clusterArray[i][k]] == L){ positions[clusterArray[i][k]] = 0.f; }
+					}
+				}
+			}
+		}
+	}
+	
 
 	/* SPATIAL CORRELATIONS */
 
 	int tag1, tag2, idist;
-	float dist;
+	dist = 0;
 
 	/* Only at selected time steps */
 	if ((step+1)%(int)ceil((Tmax/(measures*dt)))  == 0 && step>0) 
@@ -1425,14 +1696,13 @@ int main(int argc, char **argv){
 					        fprintf(logfile, "Particles %d and %d\nDistance: %.3f\nInteger distance: %d\nC[%d]=%.3f\n\n",tag1+1,tag2+1,dist,idist,idist,C[idist]);
 					      }
 			}
-	  }
+	  	}
 
 	  /* Save correlations */
 	  fprintf(corr, "%f	", (step+1)*dt);
 	  for (idist=0; idist<L/2; idist++) {fprintf(corr, "%.10f	", C[idist]);}
 	  fprintf(corr, "\n");
 	  if (DEBUG==8) {fprintf(logfile, "\n\nFINISHED COMPUTING CORRELATIONS\n\n\n");}
-
 	}
 
 	/* Save total number of clusters and measure the Energy of the system */
@@ -1473,6 +1743,13 @@ int main(int argc, char **argv){
 	  			fprintf(snap, "%.10f %d ", positions[sn], directions[sn]);
 			}
 			fprintf(snap, "\n");
+			// clusters
+			fprintf(clustdyn, "%f ", (step+1)*dt);
+			for (sn=1; sn<Nclust+1; sn++) 
+			{
+	  			fprintf(clustdyn, "%.10f %d %d ", CoM[sn], dirclust[sn], sizes[sn]);
+			}
+			fprintf(clustdyn, "\n");
 		}
 
 		/* snap final times */
@@ -1485,6 +1762,13 @@ int main(int argc, char **argv){
 	  			fprintf(snapbis, "%.10f %d ", positions[sn], directions[sn]);
 			}
 			fprintf(snapbis, "\n");
+			// clusters
+			fprintf(clustdynbis, "%f ", (step+1)*dt);
+			for (sn=1; sn<Nclust+1; sn++) 
+			{
+	  			fprintf(clustdynbis, "%.10f %d %d ", CoM[sn], dirclust[sn], sizes[sn]);
+			}
+			fprintf(clustdynbis, "\n");
 		}
 
 		/* Print to terminal */
@@ -1496,7 +1780,8 @@ int main(int argc, char **argv){
 		  fprintf(logfile, "\n");
 		  for (i=0; i<N; i++) {fprintf(logfile, "%d ",clusters[i]);}
 		  fprintf(logfile, "\n");
-		  if ((step+1)%measures==0 && step>0) {
+		  if ((step+1)%measures==0 && step>0) 
+		  {
 		    for (i=0; i<N; i++) {fprintf(logfile, "%d ",Nsize[i]);}
 		    fprintf(logfile, "\n");
 		  }
@@ -1513,7 +1798,7 @@ int main(int argc, char **argv){
 		  sprintf(message,"%.2f %% elapsed after %d hours %d minutes and %.2f seconds",(step+1)/(double)(Tmax/dt)*100,hours_taken,minutes_taken,seconds_taken);
 		  if (step==0) 
 		  {
-		    printf("\nL=%d phi=%.3f alpha=%.3f epsilon=%.5f v=%.1f beta=%.3f D=%.3f CMOB=%d IS=%d dt=%.5f\n",L,fi,alpha,epsilon,Fp,beta,Dt,CMOB,INIT_STATE,dt);
+		    printf("\nL=%f phi=%.3f alpha=%.3f epsilon=%.5f v=%.1f beta=%.3f D=%.3f CMOB=%d IS=%d dt=%.5f\n",L,fi,alpha,epsilon,Fp,beta,Dt,CMOB,INIT_STATE,dt);
 		    printf("%s",message);
 		  }
 		  else if ( step < (ceil(Tmax/dt) - 1.f) )
@@ -1525,16 +1810,13 @@ int main(int argc, char **argv){
 		  else {printf("\n");}
 		}
 
-	} /* END OF TIME LOOP */
+ } /* END OF TIME LOOP */
 	
-	/* DEBUG */ if (DEBUG >= 1) {printf("\n\n==========> TIME LOOP (ending)\n\n\n");}
+	/* DEBUG */ 
+	// if (DEBUG >= 1) {printf("\n\n==========> TIME LOOP (ending)\n\n\n");}
 
 	fclose(logfile);
 	
-
-
-
-
 	/*SAVE CLUSTER SIZE DISTRIBUTION (NSIZE)*/
 	sc=fopen(buffersc, "wb");
 	scn=fopen(bufferscn, "wb");
@@ -1572,10 +1854,15 @@ int main(int argc, char **argv){
 	fclose(snap);	
 	fclose(snapbis);	
 	fclose(corr);
+	fclose(freearr);
+	fclose(clustarr);
+	fclose(clustdyn);
+	fclose(clustdynbis);
+	fclose(csdt);
 
 	epsilon=epsilon*24;
 
-	/* DEBUG */ if (DEBUG >= 1) {printf("\n\n\n|||||||||||||||||||| SIMULATION END ||||||||||||||||||||\n\n\n");}
+	/* DEBUG */ if (DEBUG >= 1) {fprintf(logfile,"\n\n\n|||||||||||||||||||| SIMULATION END ||||||||||||||||||||\n\n\n");}
 
 return 0;
 }								/* END OF MAIN */
